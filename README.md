@@ -20,13 +20,13 @@
 [] Compare Lasso with Naive forecast
 ```
 
-| Group Description       | Price Driver                               |
-|-------------------------|--------------------------------------------|
-| Acid                    | Gas/Electricity/Ammonia/Wheat              |
-| Alkalis                 | Gas/Electricity                            |
-| Anionic Surfactants     | Gas/Electricity/Palm Oil/Ethylene oxide    |
-| Bleaching Agents        | Gas/Electricity                            |
-| Builder                 | Beets/Corn/Ethylene/Phosphate             |
-| Fatty Acid              | Palm Oil/Transport                         |
-| Non-ionic surfactants   | Gas/Electricity/Crude Oil/Palm Oil/Ammonia|
-| Solvents                | Glycerol/Natural Oil                       |
+| Group Description       | Price Driver                               |  Size  |
+|-------------------------|--------------------------------------------|--------|
+| Acid                    | Gas/Electricity/Ammonia/Wheat              | 3255   |
+| Alkalis                 | Gas/Electricity                            | 6181   |
+| Anionic Surfactants     | Gas/Electricity/Palm Oil/Ethylene oxide    | 1158   |
+| Bleaching Agents        | Gas/Electricity                            | 4153   |
+| Builder                 | Beets/Corn/Ethylene/Phosphate             |   1771  |
+| Fatty Acid              | Palm Oil/Transport                         |  689   |
+| Non-ionic surfactants   | Gas/Electricity/Crude Oil/Palm Oil/Ammonia| 3220    |
+| Solvents                | Glycerol/Natural Oil                       |  710   |
