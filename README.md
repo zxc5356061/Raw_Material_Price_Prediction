@@ -19,3 +19,14 @@
 [] Visualisation - individual Key RM codes
 [] Compare Lasso with Naive forecast
 ```
+
+| Group Description       | Price Driver                               |
+|-------------------------|--------------------------------------------|
+| Acid                    | Gas/Electricity/Ammonia/Wheat              |
+| Alkalis                 | Gas/Electricity                            |
+| Anionic Surfactants     | Gas/Electricity/Palm Oil/Ethylene oxide    |
+| Bleaching Agents        | Gas/Electricity                            |
+| Builder                 | Beets/Corn/Ethylene/Phosphate             |
+| Fatty Acid              | Palm Oil/Transport                         |
+| Non-ionic surfactants   | Gas/Electricity/Crude Oil/Palm Oil/Ammonia|
+| Solvents                | Glycerol/Natural Oil                       |
