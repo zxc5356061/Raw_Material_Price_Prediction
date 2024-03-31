@@ -178,3 +178,22 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, **kwargs: pd.DataFr
     assert y_df.isnull().values.any() == False, "Imported/Returned data contains NaN."
     return y_df
 
+
+# def monthly_mean_to_daily(df_monthly: pd.core.frame.DataFrame ) -> pd.core.frame.DataFrame:
+#     """
+#     Convert Monthly data into Daily data and impute with monthly mean prices
+#     """
+#     df_monthly['Date'] = pd.to_datetime(df_monthly[['Year', 'Month']].assign(DAY=1))
+#     df = df_monthly.explode('Date') # The explode() method converts each element of the specified column(s) into a row.
+
+#     # Generate a complete range of daily dates for the year for imputation
+#     start_date = df['Date'].min() # represents the starting point of your data
+#     end_date = df['Date'].max() + pd.offsets.MonthEnd(1)  # finds the maximum (or latest) date and include the last month fully
+#     full_date_range = pd.date_range(start=start_date, end=end_date, freq='D') # generates a fixed-frequency DatetimeIndex
+
+#     # Merge the full date range with the monthly averages to fill in all days
+#     df_full_date_range = pd.DataFrame(full_date_range, columns=['Date'])
+#     df = pd.merge(df_full_date_range, df_monthly, on='Date', how='left')
+#     df_daily = df.ffill(axis=0) # to fill the missing value based on last valid observation following index sequence
+#     return df_daily
+
