@@ -101,16 +101,16 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     filtered_df_dummies = dummies.drop('Key RM code', axis=1)
     
     ## To be discussed - To aggregate all observations with year, month, Key RM Code
-    #filtered_df_dummies['Time_index']=filtered_df_dummies['Time']
-    #filtered_df_dummies.set_index('Time_index', inplace=True)
-    ## Group by 'RM02/0002' and resample to monthly frequency while keeping the last value
-    #filtered_df_dummies = filtered_df_dummies.groupby(list(args[1:]))\
-    #                                         .resample('M')\
-    #                                         .last()\
-    #                                         .drop(list(args[1:]),axis=1)\
-    #                                         .reset_index()\
-    #                                         .drop('Time_index',axis=1)\
-    #                                         .dropna()
+    filtered_df_dummies['Time_index']=filtered_df_dummies['Time']
+    filtered_df_dummies.set_index('Time_index', inplace=True)
+    # Group by 'RM02/0002' and resample to monthly frequency while keeping the last value
+    filtered_df_dummies = filtered_df_dummies.groupby(list(args[1:]))\
+                                             .resample('M')\
+                                             .last()\
+                                             .drop(list(args[1:]),axis=1)\
+                                             .reset_index()\
+                                             .drop('Time_index',axis=1)\
+                                             .dropna()
     
     # Calculate the average raw material price
     conditions = ['Year','Month'] + list(args[1:]) # args -> Key RM Coded, drop_first=True
