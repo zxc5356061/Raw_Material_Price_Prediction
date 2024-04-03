@@ -100,6 +100,13 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     dummies = pd.concat([filtered_df, dummies], axis=1)
     filtered_df_dummies = dummies.drop('Key RM code', axis=1)
     
+    
+    # Calculate the average raw material price
+    conditions = ['Year','Month'] + list(args[1:]) # args -> Key RM Coded, drop_first=True
+    average_price = filtered_df_dummies.groupby(conditions)['PRICE (EUR/kg)']\
+                                        .mean()\
+                                        .reset_index()
+    
     ## To be discussed - To aggregate all observations with year, month, Key RM Code
     filtered_df_dummies['Time_index']=filtered_df_dummies['Time']
     filtered_df_dummies.set_index('Time_index', inplace=True)
@@ -111,12 +118,6 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
                                              .reset_index()\
                                              .drop('Time_index',axis=1)\
                                              .dropna()
-    
-    # Calculate the average raw material price
-    conditions = ['Year','Month'] + list(args[1:]) # args -> Key RM Coded, drop_first=True
-    average_price = filtered_df_dummies.groupby(conditions)['PRICE (EUR/kg)']\
-                                        .mean()\
-                                        .reset_index()
     
     # Merge the average monthly price with the original dataframe
     filtered_df_dummies = pd.merge(filtered_df_dummies, average_price,\
