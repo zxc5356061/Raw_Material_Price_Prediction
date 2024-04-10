@@ -59,6 +59,7 @@ def clean_pred_price_evo_csv(file: str, start_year:int, end_year:int) -> pd.Data
     # Import price evaluatioin data
     df = pd.read_csv(file).iloc[:,1:]
     df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='ISO8601')
+    # df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='%Y-%m-%d')
     df['Year'] = df['POSTING DATE'].dt.year
     df['Month'] = df['POSTING DATE'].dt.month
     df = df.sort_values(['Year','Month'],ascending=True)
@@ -71,7 +72,13 @@ def clean_pred_price_evo_csv(file: str, start_year:int, end_year:int) -> pd.Data
     assert df.isnull().values.any() == False, "Imported/Returned data contains NaN."
     return df
 
+
 def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
+    '''
+    1. Create all combinations of Year Month and Key RM Codes
+    2. Map the combinations with the imported raw material prices to ensure having all RM Codes for each months
+    3. Impute Year, Month, Prices (Forward Fill or Backward Fill)
+    '''
     RM_list = old_df['Key RM code'].unique()
     
     # Create combinations of ['Year','Month','Key RM code']
@@ -101,6 +108,7 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
             return series.ffill().bfill()
         # using the transform() function, which maintains the index alignment between the result and the original DataFrame. When you apply transform() with a custom function, it operates on each group individually but preserves the index, allowing it to align correctly when the results are assigned back to the DataFrame. This ensures that the forward fill (ffill()) and backward fill (bfill()) are applied correctly within each group.
         df['PRICE (EUR/kg)'] = df.groupby('Key RM code')['PRICE (EUR/kg)'].transform(custom_fill)
+        assert df.isnull().values.any() == False, "Imported/Returned data contains NaN."
     
     return df
 
@@ -114,14 +122,13 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     # output columns: 'Time', 'Group Description', 'Year', 'Month', 'RM02/0002',
        'Average_price'
     # To aggregate all observations with year, month, Key RM Code -> Not implemented yet
-    '''
+    '''        
     # To ensure inputted Key RM Codes belong to corresponding Group Description
     valid_codes = raw_df['Key RM code']
-    assert raw_df.loc[valid_codes.isin(args), 'Group Description'].unique() == target, "RM codes don't align with the group description."
+    assert raw_df.loc[valid_codes.isin(args), 'Group Description'].unique().all() == target, "RM codes don't align with the group description."
     for i in args:
         if i not in valid_codes.unique():
             raise Exception(f"{i} is not a valid RM code.")
-            
             
     # Filter raw_df by target_variable_name, ex: acid
     filtered_df = raw_df[raw_df['Group Description'] == target]\

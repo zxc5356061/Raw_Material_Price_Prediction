@@ -1,6 +1,14 @@
 ## Approaches
 ```
 ## Python 3.10
+### Naive Forecast - Baseline Model
+[] Import and extract raw material prices data
+[] Create all combinations of Year Month and Key RM Codes
+[] Map the combinations with the imported raw material prices to ensure having all RM Codes for each months
+[] Impute Year, Month, Prices (Forward Fill or Backward Fill)
+[] Naive Forecast
+
+### Lasso Regression
 [] Import monthly average prices of external price drivers
 [] Create rows and encoding with Key RM Codes, ex: Alkalis_RM02_0001, Alkalis_RM02_0002
 [] To calculate the monthly average prices of the target variables
