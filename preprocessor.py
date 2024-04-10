@@ -58,7 +58,7 @@ def clean_pred_price_evo_csv(file: str, start_year:int, end_year:int) -> pd.Data
     
     # Import price evaluatioin data
     df = pd.read_csv(file).iloc[:,1:]
-    df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='%Y-%m-%d')
+    df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='ISO8601')
     df['Year'] = df['POSTING DATE'].dt.year
     df['Month'] = df['POSTING DATE'].dt.month
     df = df.sort_values(['Year','Month'],ascending=True)
@@ -69,6 +69,39 @@ def clean_pred_price_evo_csv(file: str, start_year:int, end_year:int) -> pd.Data
     df = df.drop(['SITE', 'SUPPLIER NUMBER', 'PURCHASE NUMBER', 'WEIGHT (kg)'], axis=1)
     
     assert df.isnull().values.any() == False, "Imported/Returned data contains NaN."
+    return df
+
+def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
+    RM_list = old_df['Key RM code'].unique()
+    
+    # Create combinations of ['Year','Month','Key RM code']
+    combinations = pd.DataFrame(
+        [(year, month, rm_code) for year in old_df['Year'].unique()\
+         for month in old_df['Month'].unique()\
+         for rm_code in RM_list],\
+        columns=['Year', 'Month', 'Key RM code']
+    )
+
+    # Merge combinations with the original DataFrame to identify missing combinations, because we intend to have all RM codes appear in each Years+Months.
+    df = pd.merge(combinations, old_df, on=['Year', 'Month', 'Key RM code'], how='left')
+
+    ## Filter out and impute missing values
+    missing = df[df['PRICE (EUR/kg)'].isnull()]
+    missing_codes = missing['Key RM code'].unique()
+
+    for code in missing_codes:
+        # Impute group description
+        df.loc[df['Group Description'].isnull(),'Group Description'] = df.loc[(df['Key RM code']==code),'Group Description'].dropna().unique()[0]
+
+        # Impute Time
+        df.loc[df['Time'].isnull(),'Time'] = pd.to_datetime({'year': missing['Year'],'month': missing['Month'],'day': 15})
+        df = df.sort_values(by=['Time']).reset_index().drop('index',axis=1)
+        # Impute Price
+        def custom_fill(series):
+            return series.ffill().bfill()
+        # using the transform() function, which maintains the index alignment between the result and the original DataFrame. When you apply transform() with a custom function, it operates on each group individually but preserves the index, allowing it to align correctly when the results are assigned back to the DataFrame. This ensures that the forward fill (ffill()) and backward fill (bfill()) are applied correctly within each group.
+        df['PRICE (EUR/kg)'] = df.groupby('Key RM code')['PRICE (EUR/kg)'].transform(custom_fill)
+    
     return df
 
 

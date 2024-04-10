@@ -1,6 +1,6 @@
 ## Approaches
 ```
-## Python 3.8
+## Python 3.10
 [] Import monthly average prices of external price drivers
 [] Create rows and encoding with Key RM Codes, ex: Alkalis_RM02_0001, Alkalis_RM02_0002
 [] To calculate the monthly average prices of the target variables
