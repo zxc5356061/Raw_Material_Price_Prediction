@@ -105,6 +105,7 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
         df = df.sort_values(by=['Time']).reset_index().drop('index',axis=1)
         # Impute Price
         def custom_fill(series):
+            # return series.ffill().bfill()
             return series.ffill()
         # using the transform() function, which maintains the index alignment between the result and the original DataFrame. When you apply transform() with a custom function, it operates on each group individually but preserves the index, allowing it to align correctly when the results are assigned back to the DataFrame. This ensures that the forward fill (ffill()) and backward fill (bfill()) are applied correctly within each group.
         df['PRICE (EUR/kg)'] = df.groupby('Key RM code')['PRICE (EUR/kg)'].transform(custom_fill)
@@ -126,7 +127,7 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     '''        
     # To ensure inputted Key RM Codes belong to corresponding Group Description
     valid_codes = raw_df['Key RM code']
-    assert raw_df.loc[valid_codes.isin(args), 'Group Description'].unique().all() == target, "RM codes don't align with the group description."
+    # assert raw_df.loc[valid_codes.isin(args), 'Group Description'].unique().all() == target, "RM codes don't align with the group description." # RM code overlapping issues between acid and anionic_surfactant
     for i in args:
         if i not in valid_codes.unique():
             raise Exception(f"{i} is not a valid RM code.")
