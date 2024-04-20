@@ -77,7 +77,7 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
     '''
     1. Create all combinations of Year Month and Key RM Codes
     2. Map the combinations with the imported raw material prices to ensure having all RM Codes for each months
-    3. Impute Year, Month, Prices (Forward Fill or Backward Fill)
+    3. Impute Year, Month, Prices (Forward Fill)
     '''
     RM_list = old_df['Key RM code'].unique()
     
@@ -105,17 +105,18 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
         df = df.sort_values(by=['Time']).reset_index().drop('index',axis=1)
         # Impute Price
         def custom_fill(series):
-            return series.ffill().bfill()
+            return series.ffill()
         # using the transform() function, which maintains the index alignment between the result and the original DataFrame. When you apply transform() with a custom function, it operates on each group individually but preserves the index, allowing it to align correctly when the results are assigned back to the DataFrame. This ensures that the forward fill (ffill()) and backward fill (bfill()) are applied correctly within each group.
         df['PRICE (EUR/kg)'] = df.groupby('Key RM code')['PRICE (EUR/kg)'].transform(custom_fill)
-        assert df.isnull().values.any() == False, "Imported/Returned data contains NaN."
+        df_not_null = df[df['PRICE (EUR/kg)'].notna() == True]
+        assert df_not_null.isnull().values.any() == False, "Imported/Returned data contains NaN."
     
-    return df
+    return df_not_null
 
 
 def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str) -> pd.DataFrame:
     '''
-    *args: str -> to input key rm codes
+    *args: str -> Key RM Codes corresponding to the target variable, the first input code will be presented when all other codes == 0
     # auto filter df based on given target_name and key rm codes
     # to auto calculate the monthly average prices of the target variable
     # auto dummy variables and concat
