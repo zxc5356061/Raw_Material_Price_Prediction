@@ -5,8 +5,9 @@
 [] Import and extract raw material prices data
 [] Create all combinations of Year Month and Key RM Codes
 [] Map the combinations with the imported raw material prices to ensure having all RM Codes for each months
-[] Impute Year, Month, Prices (Forward Fill or Backward Fill)
-[] Naive Forecast
+[] Impute monthly data of all RM codes by forward fill approach
+[] Filter data with years and monthes of actual procurement
+[] To calculate monthly average prices per Key RM code and perform naive forecast
 
 ### Lasso Regression
 [] Import monthly average prices of external price drivers

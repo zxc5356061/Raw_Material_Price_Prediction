@@ -78,6 +78,10 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
     1. Create all combinations of Year Month and Key RM Codes
     2. Map the combinations with the imported raw material prices to ensure having all RM Codes for each months
     3. Impute Year, Month, Prices (Forward Fill)
+    
+    Return two Dataframes: df_not_null, missing
+    -> df_not_null: Complete dataframe imputed by forward fill method
+    -> missing: Rows needed to be imputed
     '''
     RM_list = old_df['Key RM code'].unique()
     
@@ -112,7 +116,7 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
         df_not_null = df[df['PRICE (EUR/kg)'].notna() == True]
         assert df_not_null.isnull().values.any() == False, "Imported/Returned data contains NaN."
     
-    return df_not_null
+    return df_not_null, missing
 
 
 def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str) -> pd.DataFrame:

@@ -14,9 +14,11 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
     prediction_cut: the time point to distinguish trained data and predicted data
     *args: Key RM Codes corresponding to the target variable, start from the smallest number
     
+    Ex: draw_graph(acid_df_24,'year_month','Average_price','Predictions','2023-10','RM01/0001', 'RM01/0004', 'RM01/0006', 'RM01/0007')
+    
     Return -> a line plot
     """
-    # Draw all RM codes
+    ## Draw all RM codes
     fig, ax = plt.subplots(figsize=[15,6])
     # Plot actual prices
     sns.lineplot(x=x_col, y=y_col_actual, data=df, label='Actual_price',linestyle='dashed',ax=ax)
@@ -38,7 +40,7 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
     # Display the plot
     plt.show()
     
-    # Draw RM code which is not in the columns
+    ## Draw the RM code which is not in the columns
     # Warn: unable to ensure all input RM codes are correct!
     with_dummy = [arg for arg in args if arg in df.columns]
     if [arg for arg in args] not in with_dummy:
@@ -66,7 +68,7 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
         # Display the plot
         plt.show()
 
-    # Draw other RM codes
+    ## Draw other RM codes
     for code in with_dummy:
         fig, ax = plt.subplots(figsize=[15, 6])
         # Plot actual prices
