@@ -1,5 +1,8 @@
 import pandas as pd
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 def naive_forest(df:pd.DataFrame, target:str, impute_list:pd.DataFrame):
     """
@@ -44,4 +47,29 @@ def naive_forest(df:pd.DataFrame, target:str, impute_list:pd.DataFrame):
 
     print(f"MAPE of Naive Forecast for {target}: {MAPE:.3f}")
     print(f"MSE of Naive Forecast for {target} {MSR:.3f}")
+   
+    
+    # To match the predicted values with original df
+    avg_df['year_month'] = avg_df['Year'].apply(round).astype('str') + "-" + avg_df['Month'].apply(round).astype('str')
+    
+    ## Draw all RM codes
+    fig, ax = plt.subplots(figsize=[15,6])
+    # Plot actual prices
+    sns.lineplot(x=avg_df['year_month'], y=y_true, label='Actual_price',linestyle='dashed')
+    
+    # Plot predicted prices
+    sns.lineplot(x=avg_df['year_month'], y=y_pred, label='Predicted_price')
+    
+    # Plot train-predict segamentation line
+    ax.legend(loc='upper left')
+    ax.set(title=f"Naive Forecast of {target}", ylabel='Price',xlabel='Time');
+    
+    # Filter data for specific months
+    filter_df = avg_df[avg_df['year_month'].str.endswith(('3', '6', '9', '12'))]
+    
+    # Set x-axis ticks and labels
+    plt.xticks(ticks=filter_df['year_month'], labels=filter_df['year_month'], rotation=45)
+    
+    # Display the plot
+    plt.show()
 
