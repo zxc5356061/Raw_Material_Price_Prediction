@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import seaborn as sns
+import seaborn as sns;sns.set_style("whitegrid")
 import pandas as pd
 
 def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, prediction_cut:str, *args:str):
@@ -18,6 +18,9 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
     
     Return -> a line plot
     """
+    for i in (df,x_col,y_col_actual,y_col_pred,prediction_cut,*args):
+        assert len(i) != 0, f"Warning: {i} is missed!"
+    
     ## Draw the RM code which is not in the columns
     # Warn: unable to ensure all input RM codes are correct!
     with_dummy = [arg for arg in args if arg in df.columns]
@@ -60,7 +63,7 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
         ax.axvline(x=prediction_cut, color='red', linestyle='--', label='Future predictions')
         ax.legend(loc='upper left')
         ax.set(title=code, ylabel='Price', xlabel='Time');
-        sns.set_style("whitegrid")
+        
 
         # Filter data for specific months
         filter_df = df[df[x_col].str.endswith(('3', '6', '9', '12'))]

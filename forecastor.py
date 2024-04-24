@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error
-import seaborn as sns
+import seaborn as sns;sns.set_style("whitegrid")
 import matplotlib.pyplot as plt
 
 
@@ -65,7 +65,7 @@ def naive_forest(df:pd.DataFrame, target:str, period:int, impute_list:pd.DataFra
     # Plot train-predict segamentation line
     ax.legend(loc='upper left')
     ax.set(title=f"Naive Forecast of {target}, {period} months shifted", ylabel='Price',xlabel='Time')
-    sns.set_style("whitegrid")
+    # sns.set_style("whitegrid")
     
     # Filter data for specific months
     filter_df = avg_df[avg_df['year_month'].str.endswith(('3', '6', '9', '12'))]

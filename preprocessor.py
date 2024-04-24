@@ -99,24 +99,23 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
     ## Filter out and impute missing values
     missing = df[df['PRICE (EUR/kg)'].isnull()]
     missing_codes = missing['Key RM code'].unique()
-
+    
+    df_notna = df.dropna(how="any",axis=0)
+    
     for code in missing_codes:
         # Impute group description
-        df.loc[df['Group Description'].isnull(),'Group Description'] = df.loc[(df['Key RM code']==code),'Group Description'].dropna().unique()[0]
+        df.loc[(df['Key RM code']==code) & (df['Group Description'].isnull()),'Group Description'] = df_notna.loc[(df_notna['Key RM code']==code),'Group Description'].unique()[0]
 
         # Impute Time
         df.loc[df['Time'].isnull(),'Time'] = pd.to_datetime({'year': missing['Year'],'month': missing['Month'],'day': 15})
         df = df.sort_values(by=['Time']).reset_index().drop('index',axis=1)
+        
         # Impute Price
-        def custom_fill(series):
-            # return series.ffill().bfill()
-            return series.ffill()
-        # using the transform() function, which maintains the index alignment between the result and the original DataFrame. When you apply transform() with a custom function, it operates on each group individually but preserves the index, allowing it to align correctly when the results are assigned back to the DataFrame. This ensures that the forward fill (ffill()) and backward fill (bfill()) are applied correctly within each group.
-        df['PRICE (EUR/kg)'] = df.groupby('Key RM code')['PRICE (EUR/kg)'].transform(custom_fill)
-        df_not_null = df[df['PRICE (EUR/kg)'].notna() == True]
-        assert df_not_null.isnull().values.any() == False, "Imported/Returned data contains NaN."
+        df['PRICE (EUR/kg)'] = df.groupby('Key RM code')['PRICE (EUR/kg)'].ffill()
+        df = df.dropna(how="any",axis=0)
+        assert not df.isnull().values.any(), print(df[df['PRICE (EUR/kg)'].isna()])
     
-    return df_not_null, missing
+    return df, missing
 
 
 def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str) -> pd.DataFrame:
@@ -131,7 +130,7 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     '''        
     # To ensure inputted Key RM Codes belong to corresponding Group Description
     valid_codes = raw_df['Key RM code']
-    # assert raw_df.loc[valid_codes.isin(args), 'Group Description'].unique().all() == target, "RM codes don't align with the group description." # RM code overlapping issues between acid and anionic_surfactant
+    assert raw_df.loc[valid_codes.isin(args), 'Group Description'].unique().all() == target, "RM codes don't align with the group description."
     for i in args:
         if i not in valid_codes.unique():
             raise Exception(f"{i} is not a valid RM code.")
