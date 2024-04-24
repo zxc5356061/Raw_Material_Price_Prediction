@@ -4,13 +4,14 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def naive_forest(df:pd.DataFrame, target:str, impute_list:pd.DataFrame):
+def naive_forest(df:pd.DataFrame, target:str, period:int, impute_list:pd.DataFrame):
     """
     To calculate monthly average prices per Key RM code and perform naive forecast
     
     Inputs:
     - df -> DataFrame with imputed(forward fill) target variable prices
     - target -> 'Group Description' of the target vaiable
+    - period -> How many months to be shifted
     - impute_list -> second return of preprocessor.impute_pred_price_evo_csv(), the list of imputed rows
     
     Returns:
@@ -31,7 +32,7 @@ def naive_forest(df:pd.DataFrame, target:str, impute_list:pd.DataFrame):
                     .reset_index()
     
     # Naive forecast
-    avg_df['predicted_price'] = avg_df.groupby('Key RM code')['PRICE (EUR/kg)'].shift(periods=1)
+    avg_df['predicted_price'] = avg_df.groupby('Key RM code')['PRICE (EUR/kg)'].shift(periods=period)
     
     # Calculate MAPE and MSR
     # To make sure both y_true and y_pred have same shapes.
@@ -56,13 +57,15 @@ def naive_forest(df:pd.DataFrame, target:str, impute_list:pd.DataFrame):
     fig, ax = plt.subplots(figsize=[15,6])
     # Plot actual prices
     sns.lineplot(x=avg_df['year_month'], y=y_true, label='Actual_price',linestyle='dashed')
+    # sns.set_style("whitegrid")
     
     # Plot predicted prices
     sns.lineplot(x=avg_df['year_month'], y=y_pred, label='Predicted_price')
     
     # Plot train-predict segamentation line
     ax.legend(loc='upper left')
-    ax.set(title=f"Naive Forecast of {target}", ylabel='Price',xlabel='Time');
+    ax.set(title=f"Naive Forecast of {target}, {period} months shifted", ylabel='Price',xlabel='Time')
+    sns.set_style("whitegrid")
     
     # Filter data for specific months
     filter_df = avg_df[avg_df['year_month'].str.endswith(('3', '6', '9', '12'))]

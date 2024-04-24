@@ -179,15 +179,48 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     return filtered_df_dummies
 
 
-def generate_features(start:int, end:int, y_df:pd.DataFrame, **kwargs: pd.DataFrame) -> pd.DataFrame:
+def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs: pd.DataFrame) -> pd.DataFrame:
     '''
-    # idea: to support importing n df inputs, 1+ is the target variables df, with other n external factors df -> *args
-    # y_df -> the df contains target variable data
-    ## Create 12*N features, external factor prices from one-month before to 12-month before
-    ## Combine features with target variables
+    To generate features and combine y_df with historical prices of external price drivers and autoregressive prices of y.
+    Supports N feature inputs and creates 12*N features, price changes from {start} months before prices to {end} months before prices
+    
+    Inputs:
+    - start -> starting point of time lag duration
+    - end -> ending point of time lag duration
+    - y_df -> df containing target variables and dummies
+    - *args -> all Key RM codes correspinding to the group description of y
+    - **kwargs -> {Name of external price drivers: df of external price driver data}
+    - Note: Unable to check the correctness of inputted Key RM codes
+    
+    Return:
+    - y_df_non_na -> y_df with 1*N features, rows containing NaN will be excluded
+    
+    Usage example:
+    acid_df = generate_features(1,2,dummy_df,\
+                                 'RM01/0001',\
+                                 'RM01/0004',\
+                                 'RM01/0006',\
+                                 'RM01/0007',\
+                                PNGASEUUSDM=gas_df,\
+                                PWHEAMTUSDM=wheat_df,\
+                                WPU0652013A=ammonia_df,\
+                                Electricity=elec_df
+                               )
+    
+    Return df.columns example:
+    ['RM01/0004', 'RM01/0006', 'RM01/0007', 'Year', 'Month', 'Time',
+       'Group Description', 'Average_price', 'PNGASEUUSDM_1', 'PWHEAMTUSDM_1',
+       'WPU0652013A_1', 'Electricity_1', 'PNGASEUUSDM_2', 'PWHEAMTUSDM_2',
+       'WPU0652013A_2', 'Electricity_2', 'AR_1', 'AR_2']
     '''
+    assert start <= end, 'Ending point should be later than starting point.'
+    assert len(args) != 0, "Warning: RM codes are missed."
+    assert len(kwargs) != 0, "Warning: External price drivers are missed."
+    
+    ## To create time-labelled feature lists of external price drivers
     first_key = next(iter(kwargs))
-    feature_df = kwargs[first_key]
+    feature_df = kwargs[first_key] # to caputer the first given df for following merging
+    
     # enumerate(kwargs.items()): This part of the expression iterates over the items of the kwargs dictionary using the items() method, yielding pairs of (index, (key, value)) tuples where index is the index of the item in the enumeration, and (key, value) is the key-value pair from the dictionary.
     for key, df in {k: v for i, (k, v) in enumerate(kwargs.items()) if i != 0}.items():
         feature_df = pd.merge(feature_df, df, how='left', on = (['Year', 'Month', 'Time']))
@@ -196,11 +229,24 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, **kwargs: pd.DataFr
     feature_df['Time_label'] = feature_df['Time'].dt.strftime('%Y-%m')
     feature_df = feature_df.drop(['Year','Month', 'Time'], axis=1) # to prevent duplicate columns when merging
 
-    # Combine historical feature prices with target variables:
-    ## Step 1. create time labels based on the 'Time' of target df
-    ## Step 2. merge time labels with feature df to get historical prices
-    ## Step 3. drop time labels
-    ## Step 4. merge target df with historical prices
+    ## To create autoregression parts
+    # to filter RM codes with dummies only
+    RM_dummy = [arg for arg in args if arg in y_df.columns] 
+    
+    ar_df = pd.DataFrame()
+    ar_df = y_df[["Time","Average_price",*RM_dummy]]
+    ar_df.rename(columns={"Average_price":"AR"}, inplace=True)
+    ar_df['Time_label'] = ar_df['Time'].dt.strftime('%Y-%m')
+    ar_df = ar_df.drop(["Time"], axis=1) # to prevent duplicate columns when merging
+
+
+    ## To combine historical feature prices and autoregression with target variables:
+    ## Step 1. create time labels based on y_df['Time']
+    ## Step 2.1 merge labels with feature_df to get historical prices of external factors
+    ## Step 2.2 drop time labels
+    ## Step 3.1 merge labels with ar_df to get autoregressive prices
+    ## Step 3.2 drop time labels
+    ## Step 4. merge y_df with historical prices of external factors and AR prices
     # step 1
     label_dfs=[]    # To store time labels
                 # ref: 'https://pandas.pydata.org/docs/user_guide/merging.html'
@@ -209,21 +255,36 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, **kwargs: pd.DataFr
         label.rename(columns = {'Time':f'Time_label{i}'}, inplace = True)
         label = (label[f'Time_label{i}'] - pd.DateOffset(months=i)).dt.strftime('%Y-%m')
         label_dfs.append(label)
-        
-    result = pd.concat(label_dfs, axis=1)
+    
+    df_1 = pd.concat(label_dfs, axis=1) # transform labels into a df
+    df_2 = pd.concat(label_dfs, axis=1) # transform labels into a df
+    df_2['Time'] = y_df['Time']
+    df_2[[*RM_dummy]] = ar_df[[*RM_dummy]] # to add dummy variables
 
-    # step 2
+    # step 2_1
     for i in range(start,end+1):
-        result = result.merge(feature_df, how='left',\
+        df_1 = df_1.merge(feature_df, how='left',\
                               left_on=[f'Time_label{i}'],\
                               right_on=['Time_label'])
-        [result.rename(columns={key: f'{key}_{i}'}, inplace=True) for key, value in kwargs.items()]
-        # step3
-        result = result.drop(['Time_label',f'Time_label{i}'], axis=1)
+        [df_1.rename(columns={key: f'{key}_{i}'}, inplace=True) for key, value in kwargs.items()]
+        # step2_2
+        df_1 = df_1.drop(['Time_label',f'Time_label{i}'], axis=1)
+        
+    # step 3_1   
+    for i in range(start,end+1):
+        df_2 = df_2.merge(ar_df, how='left',\
+                             left_on=[f'Time_label{i}', *RM_dummy],\
+                              right_on=["Time_label", *RM_dummy])
+        df_2.rename(columns={"AR": f"AR_{i}"}, inplace=True)
+        # step3_2
+        df_2 = df_2.drop(['Time_label',f'Time_label{i}'], axis=1)
+        
     # step 4    
-    y_df = pd.concat([y_df,result],axis=1)
-    assert y_df.isnull().values.any() == False, "Imported/Returned data contains NaN."
-    return y_df
+    y_df = pd.concat([y_df,df_1],axis=1) # Horizontally Concatenate
+    y_df = pd.merge(y_df,df_2, how='left', on=["Time",*RM_dummy])
+    y_df_non_na = y_df.dropna(axis=0, how='any')
+    assert y_df_non_na.isnull().values.any() == False, "Returned data contains NaN."
+    return y_df_non_na
 
 
 # def monthly_mean_to_daily(df_monthly: pd.core.frame.DataFrame ) -> pd.core.frame.DataFrame:

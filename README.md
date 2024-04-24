@@ -13,7 +13,7 @@
 [] Import monthly average prices of external price drivers
 [] Create rows and encoding with Key RM Codes, ex: Alkalis_RM02_0001, Alkalis_RM02_0002
 [] To calculate the monthly average prices of the target variables
-[] Create 12*N features, external factor prices from one-month before to 12-month before
+[] Create 12*N features, price changes from {start} months before prices to {end} months before prices, features including historical prices of external price drivers and autoregressive prices of y
 [] Combine features with target variables
 [] train_test_split() - do calculation and scaling only based on train data set to prevent data leakage
 [] Detect outliers - skip
@@ -39,3 +39,7 @@
 | Fatty Acid              | Palm Oil/Transport                         |  689   |
 | Non-ionic surfactants   | Gas/Electricity/Crude Oil/Palm Oil/Ammonia| 3220    |
 | Solvents                | Glycerol/Natural Oil                       |  710   |
+
+## External factor sources:
+[Electricity](https://my.elexys.be/MarketInformation/IceEndexAverage.aspx)
+[Fred](https://fred.stlouisfed.org/)

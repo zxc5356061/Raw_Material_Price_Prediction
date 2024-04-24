@@ -18,28 +18,6 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
     
     Return -> a line plot
     """
-    ## Draw all RM codes
-    fig, ax = plt.subplots(figsize=[15,6])
-    # Plot actual prices
-    sns.lineplot(x=x_col, y=y_col_actual, data=df, label='Actual_price',linestyle='dashed',ax=ax)
-    
-    # Plot predicted prices
-    sns.lineplot(x=x_col, y=y_col_pred, data=df, label='Predicted_price',ax=ax)
-    
-    # Plot train-predict segamentation line
-    ax.axvline(x=prediction_cut, color='red', linestyle='--', label='Future predictions')
-    ax.legend(loc='upper left')
-    ax.set(title='Forecast_all_RM_codes', ylabel='Price',xlabel='Time');
-    
-    # Filter data for specific months
-    filter_df = df[df[x_col].str.endswith(('3', '6', '9', '12'))]
-    
-    # Set x-axis ticks and labels
-    plt.xticks(ticks=filter_df[x_col], labels=filter_df[x_col], rotation=45)
-    
-    # Display the plot
-    plt.show()
-    
     ## Draw the RM code which is not in the columns
     # Warn: unable to ensure all input RM codes are correct!
     with_dummy = [arg for arg in args if arg in df.columns]
@@ -58,6 +36,7 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
         ax.axvline(x=prediction_cut, color='red', linestyle='--', label='Future predictions')
         ax.legend(loc='upper left')
         ax.set(title=next(arg for arg in args if arg not in with_dummy), ylabel='Price', xlabel='Time');
+        sns.set_style("whitegrid")
 
         # Filter data for specific months
         filter_df = df[df[x_col].str.endswith(('3', '6', '9', '12'))]
@@ -81,6 +60,7 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
         ax.axvline(x=prediction_cut, color='red', linestyle='--', label='Future predictions')
         ax.legend(loc='upper left')
         ax.set(title=code, ylabel='Price', xlabel='Time');
+        sns.set_style("whitegrid")
 
         # Filter data for specific months
         filter_df = df[df[x_col].str.endswith(('3', '6', '9', '12'))]
@@ -90,4 +70,3 @@ def draw_graph(df:pd.DataFrame, x_col:str, y_col_actual:str, y_col_pred:str, pre
 
         # Display the plot
         plt.show()
-
