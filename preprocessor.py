@@ -1,6 +1,7 @@
 from fredapi import Fred
 import pandas as pd
 from datetime import datetime
+import numpy as np
 
 
 def get_Fred_data(target:str,\
@@ -205,7 +206,7 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
                                 WPU0652013A=ammonia_df,\
                                 Electricity=elec_df
                                )
-    
+    len(kwarg)*2*(end-start+1)+(len(args-1))+5 
     Return df.columns example:
     ['RM01/0004', 'RM01/0006', 'RM01/0007', 'Year', 'Month', 'Time',
        'Group Description', 'Average_price', 'PNGASEUUSDM_1', 'PWHEAMTUSDM_1',
@@ -256,19 +257,20 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
         label_dfs.append(label)
     
     df_1 = pd.concat(label_dfs, axis=1) # transform labels into a df
+    df_1['Time'] = y_df['Time'] # add current time as merging keys
     df_2 = pd.concat(label_dfs, axis=1) # transform labels into a df
-    df_2['Time'] = y_df['Time']
-    df_2[[*RM_dummy]] = ar_df[[*RM_dummy]] # to add dummy variables
+    df_2['Time'] = y_df['Time']  # add current time as merging keys
+    df_2[[*RM_dummy]] = ar_df[[*RM_dummy]] # add dummy variables as merging keys
 
     # step 2_1
     for i in range(start,end+1):
         df_1 = df_1.merge(feature_df, how='left',\
-                              left_on=[f'Time_label{i}'],\
-                              right_on=['Time_label'])
+                          left_on=[f'Time_label{i}'],\
+                          right_on=['Time_label'])
         [df_1.rename(columns={key: f'{key}_{i}'}, inplace=True) for key, value in kwargs.items()]
         # step2_2
         df_1 = df_1.drop(['Time_label',f'Time_label{i}'], axis=1)
-        
+  
     # step 3_1   
     for i in range(start,end+1):
         df_2 = df_2.merge(ar_df, how='left',\
@@ -279,28 +281,18 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
         df_2 = df_2.drop(['Time_label',f'Time_label{i}'], axis=1)
         
     # step 4    
-    y_df = pd.concat([y_df,df_1],axis=1) # Horizontally Concatenate
+    y_df = pd.merge(y_df,df_1,how='left', on=['Time'])
     y_df = pd.merge(y_df,df_2, how='left', on=["Time",*RM_dummy])
     y_df_non_na = y_df.dropna(axis=0, how='any')
+    
+    # Unit testing
     assert y_df_non_na.isnull().values.any() == False, "Returned data contains NaN."
+    assert y_df_non_na.shape[0] > 0, "The returned DataFrame is empty."
+    assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)-1+5), "The number of columns in the returned DataFrame is incorrect."
+    for key, value in kwargs.items():
+        for i in range(start, end+1):
+            assert y_df_non_na.dtypes[f'{key}_{i}'] == np.float64, f"The data type of column {key}_{i} is not np.float64."
+
     return y_df_non_na
 
-
-# def monthly_mean_to_daily(df_monthly: pd.core.frame.DataFrame ) -> pd.core.frame.DataFrame:
-#     """
-#     Convert Monthly data into Daily data and impute with monthly mean prices
-#     """
-#     df_monthly['Date'] = pd.to_datetime(df_monthly[['Year', 'Month']].assign(DAY=1))
-#     df = df_monthly.explode('Date') # The explode() method converts each element of the specified column(s) into a row.
-
-#     # Generate a complete range of daily dates for the year for imputation
-#     start_date = df['Date'].min() # represents the starting point of your data
-#     end_date = df['Date'].max() + pd.offsets.MonthEnd(1)  # finds the maximum (or latest) date and include the last month fully
-#     full_date_range = pd.date_range(start=start_date, end=end_date, freq='D') # generates a fixed-frequency DatetimeIndex
-
-#     # Merge the full date range with the monthly averages to fill in all days
-#     df_full_date_range = pd.DataFrame(full_date_range, columns=['Date'])
-#     df = pd.merge(df_full_date_range, df_monthly, on='Date', how='left')
-#     df_daily = df.ffill(axis=0) # to fill the missing value based on last valid observation following index sequence
-#     return df_daily
 
