@@ -29,6 +29,8 @@ def get_Fred_data(target:str,\
     df = df[df['Year'].between(start_year,end_year)]
     df.rename(columns = {'index':'Time'}, inplace = True)
     
+    df[target] = df[target].ffill()
+    
     assert df.isnull().values.any() == False, "Imported data contains NaN."
     
     return df
@@ -59,6 +61,7 @@ def clean_pred_price_evo_csv(file: str, start_year:int, end_year:int) -> pd.Data
     
     # Import price evaluatioin data
     df = pd.read_csv(file).iloc[:,1:]
+    df['Group Description'] = df['Group Description'].str.lower()
     df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='ISO8601')
     # df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='%Y-%m-%d')
     df['Year'] = df['POSTING DATE'].dt.year
@@ -131,6 +134,7 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     '''        
     # To ensure inputted Key RM Codes belong to corresponding Group Description
     valid_codes = raw_df['Key RM code']
+    raw_df['Group Description'] = raw_df['Group Description'].str.lower()
     assert raw_df.loc[valid_codes.isin(args), 'Group Description'].unique().all() == target, "RM codes don't align with the group description."
     for i in args:
         if i not in valid_codes.unique():
@@ -142,13 +146,23 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     filtered_df = filtered_df.reset_index().drop('index',axis=1)
     
     # Create n-1 dummy variables
-    dummies = pd.get_dummies(filtered_df['Key RM code'], drop_first=True)
+    if len(args) == 1:
+        dummies = pd.get_dummies(filtered_df['Key RM code'], drop_first=False)
+    else:
+    	dummies = pd.get_dummies(filtered_df['Key RM code'], drop_first=True)
+        
     dummies = pd.concat([filtered_df, dummies], axis=1)
     filtered_df_dummies = dummies.drop('Key RM code', axis=1)
     
     
     # Calculate the average raw material price
-    conditions = ['Year','Month'] + list(args[1:]) # args -> Key RM Coded, drop_first=True
+    if len(args) == 1:
+        conditions = ['Year','Month'] + list(args)
+        mask = list(args)
+    else:
+        conditions = ['Year','Month'] + list(args[1:]) # args -> Key RM Coded, drop_first=True
+        mask = list(args[1:])
+                    
     average_price = filtered_df_dummies.groupby(conditions)['PRICE (EUR/kg)']\
                                         .mean()\
                                         .reset_index()
@@ -157,10 +171,10 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     filtered_df_dummies['Time_index']=filtered_df_dummies['Time']
     filtered_df_dummies.set_index('Time_index', inplace=True)
     # Group by 'RM02/0002' and resample to monthly frequency while keeping the last value
-    filtered_df_dummies = filtered_df_dummies.groupby(list(args[1:]))\
+    filtered_df_dummies = filtered_df_dummies.groupby(mask)\
                                              .resample('M')\
                                              .last()\
-                                             .drop(list(args[1:]),axis=1)\
+                                             .drop(mask,axis=1)\
                                              .reset_index()\
                                              .drop('Time_index',axis=1)\
                                              .dropna()
@@ -288,7 +302,10 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
     # Unit testing
     assert y_df_non_na.isnull().values.any() == False, "Returned data contains NaN."
     assert y_df_non_na.shape[0] > 0, "The returned DataFrame is empty."
-    assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)-1+5), "The number of columns in the returned DataFrame is incorrect."
+    if len(args) == 1:
+        assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)+5), "The number of columns in the returned DataFrame is incorrect."
+    else:
+        assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)-1+5), "The number of columns in the returned DataFrame is incorrect."
     for key, value in kwargs.items():
         for i in range(start, end+1):
             assert y_df_non_na.dtypes[f'{key}_{i}'] == np.float64, f"The data type of column {key}_{i} is not np.float64."
