@@ -297,7 +297,7 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
     # step 4    
     y_df = pd.merge(y_df,df_1,how='left', on=['Time'])
     y_df = pd.merge(y_df,df_2, how='left', on=["Time",*RM_dummy])
-    y_df_non_na = y_df.dropna(axis=0, how='any')
+    y_df_non_na = y_df.dropna(axis=0, how='any').drop_duplicates(subset=None)
     
     # Unit testing
     assert y_df_non_na.isnull().values.any() == False, "Returned data contains NaN."
