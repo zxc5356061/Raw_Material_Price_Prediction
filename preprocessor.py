@@ -122,9 +122,10 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
     return df, missing
 
 
+
 def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str) -> pd.DataFrame:
     '''
-    *args: str -> Key RM Codes corresponding to the target variable, the first input code will be presented when all other codes == 0
+    *args: str -> Key RM Codes corresponding to the target variable, create N dummy variables
     # auto filter df based on given target_name and key rm codes
     # to auto calculate the monthly average prices of the target variable
     # auto dummy variables and concat
@@ -145,29 +146,35 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
                     .sort_values(['Year','Month'],ascending=True)
     filtered_df = filtered_df.reset_index().drop('index',axis=1)
     
-    # Create n-1 dummy variables
-    if len(args) == 1:
-        dummies = pd.get_dummies(filtered_df['Key RM code'], drop_first=False)
-    else:
-    	dummies = pd.get_dummies(filtered_df['Key RM code'], drop_first=True)
+    dummies = pd.get_dummies(filtered_df['Key RM code'], drop_first=False)
+    # if len(args) == 1:
+    #   dummies = pd.get_dummies(filtered_df['Key RM code'], drop_first=False)
+    # else:
+    #  	dummies = pd.get_dummies(filtered_df['Key RM code'], drop_first=True)
         
     dummies = pd.concat([filtered_df, dummies], axis=1)
     filtered_df_dummies = dummies.drop('Key RM code', axis=1)
     
+    # Verify if columns in args exist in filtered_df_dummies
+    missing_columns = set(args) - set(filtered_df_dummies.columns)
+    if missing_columns == True:
+        raise Exception(f"Columns {', '.join(missing_columns)} are missing in filtered_df_dummies.")
     
-    # Calculate the average raw material price
-    if len(args) == 1:
-        conditions = ['Year','Month'] + list(args)
-        mask = list(args)
-    else:
-        conditions = ['Year','Month'] + list(args[1:]) # args -> Key RM Coded, drop_first=True
-        mask = list(args[1:])
+    ## Calculate the average raw material price
+    conditions = ['Year','Month'] + list(args)
+    mask = list(args)
+    # if len(args) == 1:
+    #     conditions = ['Year','Month'] + list(args)
+    #     mask = list(args)
+    # else:
+    #     conditions = ['Year','Month'] + list(args[1:]) # args -> Key RM Coded, drop_first=True
+    #     mask = list(args[1:])
                     
     average_price = filtered_df_dummies.groupby(conditions)['PRICE (EUR/kg)']\
                                         .mean()\
                                         .reset_index()
     
-    ## To be discussed - To aggregate all observations with year, month, Key RM Code
+    ## To aggregate all observations with year, month, Key RM Code
     filtered_df_dummies['Time_index']=filtered_df_dummies['Time']
     filtered_df_dummies.set_index('Time_index', inplace=True)
     # Group by 'RM02/0002' and resample to monthly frequency while keeping the last value
@@ -191,6 +198,7 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     
     assert filtered_df_dummies.isnull().values.any() == False, "Imported/Returned data contains NaN."
     return filtered_df_dummies
+
 
 
 def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs: pd.DataFrame) -> pd.DataFrame:
@@ -300,16 +308,41 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
     y_df_non_na = y_df.dropna(axis=0, how='any').drop_duplicates(subset=None)
     
     # Unit testing
-    assert y_df_non_na.isnull().values.any() == False, "Returned data contains NaN."
+    assert not y_df_non_na.isnull().values.any(), "Returned data contains NaN."
     assert y_df_non_na.shape[0] > 0, "The returned DataFrame is empty."
+    
     if len(args) == 1:
         assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)+5), "The number of columns in the returned DataFrame is incorrect."
     else:
-        assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)-1+5), "The number of columns in the returned DataFrame is incorrect."
+        # assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)-1+5), "The number of columns in the returned DataFrame is incorrect."
+        assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)+5), "The number of columns in the returned DataFrame is incorrect."
     for key, value in kwargs.items():
         for i in range(start, end+1):
             assert y_df_non_na.dtypes[f'{key}_{i}'] == np.float64, f"The data type of column {key}_{i} is not np.float64."
+    
+    assert y_df_non_na.shape[0] <= y_df.shape[0], "Returned df has more rows than inputted y_df."
 
     return y_df_non_na
+
+
+
+def get_interaction_terms(raw_df: pd.DataFrame) -> pd.DataFrame:
+    assert raw_df.shape[0] > 0, "Given DataFrame is empty!"
+    
+    df = raw_df.copy()
+
+    rm_lists = [col for col in raw_df.columns if col.startswith("RM")]
+    ar_lists = [col for col in raw_df.columns if col.startswith("AR")]
+    
+    for rm in rm_lists:
+        for ar in ar_lists:
+            new_column = f"{rm}_{ar}"
+            raw_df[new_column] = raw_df[rm] * raw_df[ar]
+    
+    assert not raw_df.isnull().values.any(), "Returned data contains NaN."
+    assert raw_df.shape[0] == df.shape[0], "The No. of rows changed!"
+    assert raw_df.shape[1] == (len(df.columns) + len(rm_lists) * len(ar_lists)), "Incorrect shape"
+    
+    return raw_df
 
 
