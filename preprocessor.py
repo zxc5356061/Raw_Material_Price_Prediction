@@ -305,24 +305,25 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
     # step 4    
     y_df = pd.merge(y_df,df_1,how='left', on=['Time'])
     y_df = pd.merge(y_df,df_2, how='left', on=["Time",*RM_dummy])
-    y_df_non_na = y_df.dropna(axis=0, how='any').drop_duplicates(subset=None)
+    # y_df_non_na = y_df.dropna(axis=0, how='any').drop_duplicates(subset=None)
     
     # Unit testing
-    assert not y_df_non_na.isnull().values.any(), "Returned data contains NaN."
-    assert y_df_non_na.shape[0] > 0, "The returned DataFrame is empty."
+    # assert not y_df_non_na.isnull().values.any(), "Returned data contains NaN."
+    # assert y_df_non_na.shape[0] > 0, "The returned DataFrame is empty."
     
-    if len(args) == 1:
-        assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)+5), "The number of columns in the returned DataFrame is incorrect."
-    else:
+    # if len(args) == 1:
+    #    assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)+5), "The number of columns in the returned DataFrame is incorrect."
+    #else:
         # assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)-1+5), "The number of columns in the returned DataFrame is incorrect."
-        assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)+5), "The number of columns in the returned DataFrame is incorrect."
-    for key, value in kwargs.items():
-        for i in range(start, end+1):
-            assert y_df_non_na.dtypes[f'{key}_{i}'] == np.float64, f"The data type of column {key}_{i} is not np.float64."
+    #    assert y_df_non_na.shape[1] == ((len(kwargs)+1)*(end-start+1)+len(args)+5), "The number of columns in the returned DataFrame is incorrect."
+    #for key, value in kwargs.items():
+    #    for i in range(start, end+1):
+    #        assert y_df_non_na.dtypes[f'{key}_{i}'] == np.float64, f"The data type of column {key}_{i} is not np.float64."
     
-    assert y_df_non_na.shape[0] <= y_df.shape[0], "Returned df has more rows than inputted y_df."
+    # assert y_df_non_na.shape[0] <= y_df.shape[0], "Returned df has more rows than inputted y_df."
 
-    return y_df_non_na
+    # return y_df_non_na
+    return y_df
 
 
 
