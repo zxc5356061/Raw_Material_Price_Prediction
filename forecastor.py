@@ -6,8 +6,40 @@ from sklearn.metrics import mean_absolute_percentage_error
 import numpy as np
 
 
+def persistence_Naive_MAPE(raw_df:pd.DataFrame, code:str, lag:int, test_periods):
+    """
+    Calculate MAPE based on persistent Naive approach.
+    
+    Calculation approach:
+    - lag = 1: 'Average_price' VS 'AR_1'
+    - lag = 3: 'Average_price' VS 'AR_3'
+    - lag = 6: 'Average_price' VS 'AR_6'
+    """
+    assert not len(raw_df) == 0, "df is empty!"
+    assert not len(code) == 0, "RM_codes are missed."
+    assert isinstance(lag, int), "Time lag is missed."
+    assert lag > 0, "Time lag should be a positive int."
+    assert len(test_periods) == 2, "There should only be one test_start and one test_end."
+    
+    df = raw_df[raw_df[code]==True]
+    test_start, test_end = test_periods
+    
+    test_df = df[df.Time.between(test_start, test_end, inclusive = "left")]
+    
+    if lag == 1:
+        mape = mean_absolute_percentage_error(test_df['Average_price'],test_df['AR_1'])
+        assert mape > 0, "mape is negative!"
+        return round(mape*100,3)
+    elif lag > 1:
+        mape = mean_absolute_percentage_error(test_df['Average_price'],test_df[f'AR_{lag}'])
+        assert mape > 0, "mape is negative!"
+        return round(mape*100,3)
+
+    
 def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_bottom = 0.01):
     """
+    Train Lasso models based on individual RM code with only autoregression features and given test periods
+    
     X_train headers
     - lag = 1: ['AR_1', 'AR_2', 'AR_3', 'AR_4', 'AR_5', 'AR_6', 'AR_7', 'AR_8', 'AR_9', 'AR_10', 'AR_11', 'AR_12']
     - lag = 3: ['AR_3', 'AR_4', 'AR_5', 'AR_6', 'AR_7', 'AR_8', 'AR_9', 'AR_10', 'AR_11', 'AR_12']
@@ -24,6 +56,7 @@ def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_b
     assert not len(raw_df) == 0, "df is empty!"
     assert not len(code) == 0, "RM_codes are missed."
     assert isinstance(lag, int), "Time lag is missed."
+    assert lag > 0, "Time lag should be a positive int."
     assert len(test_periods) == 2, "There should only be one test_start and one test_end." 
 
     df = raw_df[raw_df[code]==True]
@@ -80,11 +113,14 @@ def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_b
     y_pred_test = best_lasso_model.predict(X_test_scaled)
     y_pred_test_inverse = scaler_y.inverse_transform(y_pred_test.reshape(-1,1))
     mape = mean_absolute_percentage_error(y_test,y_pred_test_inverse)
-    return mape
+    assert mape > 0, "mape is negative!"
+    return mape*100
 
 
 def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_bottom = 0.01):
     """
+    Train Lasso models based on individual RM code with autoregression features and external price drivers and given test periods
+    
     X_train headers
     - lag = 1: ['Electricity_1', 'Electricity_2', ... 'Electricity_12', 'AR_1', 'AR_2' ... 'AR_12']
     - lag = 3: ['Electricity_3', 'Electricity_4', ... 'Electricity_12', 'AR_3', 'AR_4' ... 'AR_12']
@@ -101,6 +137,7 @@ def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_period
     assert not len(raw_df) == 0, "df is empty!"
     assert not len(code) == 0, "RM_codes are missed."
     assert isinstance(lag, int), "Time lag is missed."
+    assert lag > 0, "Time lag should be a positive int."
     assert len(test_periods) == 2, "There should only be one test_start and one test_end." 
 
     df = raw_df[raw_df[code]==True]
@@ -157,5 +194,6 @@ def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_period
     y_pred_test = best_lasso_model.predict(X_test_scaled)
     y_pred_test_inverse = scaler_y.inverse_transform(y_pred_test.reshape(-1,1))
     mape = mean_absolute_percentage_error(y_test,y_pred_test_inverse)
-    return mape
+    assert mape > 0, "mape is negative!"
+    return mape*100
 

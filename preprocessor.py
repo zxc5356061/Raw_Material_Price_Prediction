@@ -201,6 +201,15 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
 
 
 def exclude_imputed_data_from_y(y_df:pd.DataFrame,missing:pd.DataFrame,RM_codes:list) -> pd.DataFrame:
+    """
+    This function will exclude imputed records without real purchasing data from y, i.e. if there were purchases in Jan-2022 and Mar-2022, then we only predict y based on the data of Jan-2022 and Mar-2022, and exclude the imputed values in Feb-2022 to be one of the target variables(y).
+    
+    - missing -> second return of preprocessor.impute_pred_price_evo_csv(), the list of imputed rows, ["Year", "Month", "Key RM code"]
+    """
+    assert len(y_df) != 0, "Warning: Empty dataframe!"
+    assert len(missing) != 0, "Warning: impute_list is empty."
+    assert len(RM_codes) != 0, "Warning: RM codes are empty."
+    
     ## To slide imputed list by RM codes with the same group, and create dummy variables
     missing_ = missing[missing['Key RM code'].isin(RM_codes)]
     dummies_ = pd.get_dummies(missing_['Key RM code'], drop_first=False)
@@ -229,7 +238,7 @@ def exclude_imputed_data_from_y(y_df:pd.DataFrame,missing:pd.DataFrame,RM_codes:
 
 
 
-def generate_features(start:int, end:int, y_df:pd.DataFrame, impute_list:list, *args:str, **kwargs: pd.DataFrame) -> pd.DataFrame:
+def generate_features(start:int, end:int, y_df:pd.DataFrame, impute_list:pd.DataFrame, *args:str, **kwargs: pd.DataFrame) -> pd.DataFrame:
     '''
     To generate features and combine y_df with historical prices of external price drivers and autoregressive prices of y.
     Supports N feature inputs and creates 12*N features, price changes from {start} months before prices to {end} months before prices
@@ -239,7 +248,7 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, impute_list:list, *
     - start -> starting point of time lag duration
     - end -> ending point of time lag duration
     - y_df -> df containing target variables and dummies
-    - impute_list -> second return of preprocessor.impute_pred_price_evo_csv(), the list of imputed rows
+    - impute_list -> second return of preprocessor.impute_pred_price_evo_csv(), the list of imputed rows, ["Year", "Month", "Key RM code"]
     - *args -> all Key RM codes correspinding to the group description of y
     - **kwargs -> {Name of external price drivers: df of external price driver data}
     - Note: Unable to check the correctness of inputted Key RM codes
@@ -266,8 +275,11 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, impute_list:list, *
        'WPU0652013A_2', 'Electricity_2', 'AR_1', 'AR_2']
     '''
     assert start <= end, 'Ending point should be later than starting point.'
-    assert len(args) != 0, "Warning: RM codes are missed."
-    assert len(kwargs) != 0, "Warning: External price drivers are missed."
+    assert len(y_df) != 0, "Warning: Empty dataframe!"
+    assert len(impute_list) != 0, "Warning: impute_list is empty."
+    assert len(args) != 0, "Warning: RM codes are empty."
+    assert len(kwargs) != 0, "Warning: External price drivers are empty."
+    
     
     ## To create time-labelled feature lists of external price drivers
     first_key = next(iter(kwargs))
