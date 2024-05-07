@@ -6,7 +6,7 @@ from sklearn.metrics import mean_absolute_percentage_error
 import numpy as np
 
 
-def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods):
+def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_bottom = 0.01):
     """
     X_train headers
     - lag = 1: ['AR_1', 'AR_2', 'AR_3', 'AR_4', 'AR_5', 'AR_6', 'AR_7', 'AR_8', 'AR_9', 'AR_10', 'AR_11', 'AR_12']
@@ -14,7 +14,7 @@ def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods):
     - lag = 6: ['AR_6', 'AR_7', 'AR_8', 'AR_9', 'AR_10', 'AR_11', 'AR_12']
     
     Model parameters:
-    - param_grid = {'alpha': np.linspace(0.01, 1, 3000)}
+    - param_grid = {'alpha': np.linspace(alpha_bottom, 1, 3000)}
     - random_search = RandomizedSearchCV(estimator=lasso,
                                          param_distributions=param_grid,
                                          n_iter=300,
@@ -61,7 +61,7 @@ def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods):
     y_test_scaled = scaler_y.transform(y_test.reshape(-1,1))
 
     # Define the parameter grid
-    param_grid = {'alpha': np.linspace(0.01, 1, 3000)}
+    param_grid = {'alpha': np.linspace(alpha_bottom, 1, 3000)}
     # Create a Lasso regression model
     lasso = Lasso()
     # Create RandomizedSearchCV object
@@ -83,7 +83,7 @@ def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods):
     return mape
 
 
-def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_periods):
+def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_bottom = 0.01):
     """
     X_train headers
     - lag = 1: ['Electricity_1', 'Electricity_2', ... 'Electricity_12', 'AR_1', 'AR_2' ... 'AR_12']
@@ -91,7 +91,7 @@ def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_period
     - lag = 6: ['Electricity_6', 'Electricity_7', ... 'Electricity_12', 'AR_6', 'AR_7' ... 'AR_12']
     
     Model parameters:
-    - param_grid = {'alpha': np.linspace(0.01, 1, 3000)}
+    - param_grid = {'alpha': np.linspace(alpha_bottom, 1, 3000)}
     - random_search = RandomizedSearchCV(estimator=lasso,
                                          param_distributions=param_grid,
                                          n_iter=300,
@@ -138,7 +138,7 @@ def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_period
     y_test_scaled = scaler_y.transform(y_test.reshape(-1,1))
 
     # Define the parameter grid
-    param_grid = {'alpha': np.linspace(0.01, 1, 3000)}
+    param_grid = {'alpha': np.linspace(alpha_bottom, 1, 3000)}
     # Create a Lasso regression model
     lasso = Lasso()
     # Create RandomizedSearchCV object
