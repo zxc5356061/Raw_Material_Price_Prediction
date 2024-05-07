@@ -101,7 +101,7 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
     df = pd.merge(combinations, old_df, on=['Year', 'Month', 'Key RM code'], how='left')
 
     ## Filter out and impute missing values
-    missing = df[df['PRICE (EUR/kg)'].isnull()]
+    missing = df[df['PRICE (EUR/kg)'].isnull()].drop(["Time","Group Description","PRICE (EUR/kg)"],axis=1)
     missing_codes = missing['Key RM code'].unique()
     
     df_notna = df.dropna(how="any",axis=0)
@@ -116,10 +116,10 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
         
         # Impute Price
         df['PRICE (EUR/kg)'] = df.groupby('Key RM code')['PRICE (EUR/kg)'].ffill()
-        df = df.dropna(how="any",axis=0)
-        assert not df.isnull().values.any(), print(df[df['PRICE (EUR/kg)'].isna()])
+        df_cleaned = df.dropna(how="any",axis=0)
+        assert not df_cleaned.isnull().values.any(), print(df[df['PRICE (EUR/kg)'].isna()])
     
-    return df, missing
+    return df_cleaned, missing
 
 
 
@@ -200,16 +200,46 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     return filtered_df_dummies
 
 
+def exclude_imputed_data_from_y(y_df:pd.DataFrame,missing:pd.DataFrame,RM_codes:list) -> pd.DataFrame:
+    ## To slide imputed list by RM codes with the same group, and create dummy variables
+    missing_ = missing[missing['Key RM code'].isin(RM_codes)]
+    dummies_ = pd.get_dummies(missing_['Key RM code'], drop_first=False)
+    dummies_df = pd.concat([missing_, dummies_], axis=1).drop('Key RM code', axis=1)
+    
+    # Unit testing
+    to_test = set(dummies_df.drop(['Year', 'Month'],axis=1).columns)
+    assert to_test.issubset(set(RM_codes)), "filtered_df_dummies includes incorrect RM code."
+    
+    ## Anti join between feature_df and imputed list
+    outer = y_df.merge(dummies_df, how='outer', indicator=True) # indicator True creates a column "_merge"
+    anti_join = outer[(outer._merge=='left_only')].drop('_merge', axis=1)
 
-def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs: pd.DataFrame) -> pd.DataFrame:
+    # Unit testing
+    for code in RM_codes:
+        # Ensure anti_join and missing do not have matching "Year", "Month", rm code
+        missing_filtered = missing_.loc[missing_['Key RM code'] == code, ['Year', 'Month']]
+        anti_join_filtered = anti_join.loc[anti_join[code] == True, ['Year', 'Month']]
+        missing_set = set([tuple(x) for x in missing_filtered.values])
+        anti_join_set = set([tuple(x) for x in anti_join_filtered.values])
+
+        # Assert that there are no common elements
+        assert missing_set.isdisjoint(anti_join_set), f"There are matching 'Year', 'Month', {code} between anti_join and missing."
+        
+    return anti_join
+
+
+
+def generate_features(start:int, end:int, y_df:pd.DataFrame, impute_list:list, *args:str, **kwargs: pd.DataFrame) -> pd.DataFrame:
     '''
     To generate features and combine y_df with historical prices of external price drivers and autoregressive prices of y.
     Supports N feature inputs and creates 12*N features, price changes from {start} months before prices to {end} months before prices
+    This function only take imputed records without real purchasing for autoregression, but will exclude them from y, i.e. if there were purchases in Jan-2022 and Mar-2022, then we only predict y based on the data of Jan-2022 and Mar-2022, and exclude the imputed values in Feb-2022 to be one of the target variables(y).
     
     Inputs:
     - start -> starting point of time lag duration
     - end -> ending point of time lag duration
     - y_df -> df containing target variables and dummies
+    - impute_list -> second return of preprocessor.impute_pred_price_evo_csv(), the list of imputed rows
     - *args -> all Key RM codes correspinding to the group description of y
     - **kwargs -> {Name of external price drivers: df of external price driver data}
     - Note: Unable to check the correctness of inputted Key RM codes
@@ -218,7 +248,7 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
     - y_df_non_na -> y_df with 1*N features, rows containing NaN will be excluded
     
     Usage example:
-    acid_df = generate_features(1,2,dummy_df,\
+    acid_df = generate_features(1,2,dummy_df,missing,\
                                  'RM01/0001',\
                                  'RM01/0004',\
                                  'RM01/0006',\
@@ -305,7 +335,11 @@ def generate_features(start:int, end:int, y_df:pd.DataFrame, *args:int,**kwargs:
     # step 4    
     y_df = pd.merge(y_df,df_1,how='left', on=['Time'])
     y_df = pd.merge(y_df,df_2, how='left', on=["Time",*RM_dummy])
-    y_df_non_na = y_df.dropna(axis=0, how='any').drop_duplicates(subset=None)
+    non_na_df = y_df.dropna(axis=0, how='any').drop_duplicates(subset=None)
+    
+    ## To exclude records without real purchasing
+    # i.e. if there were purchases in Jan-2022 and Mar-2022, then we only consider the performances of models based on the predictions of Jan-2022 and Mar-2022, and exclude the imputed value in Feb-2022.
+    y_df_non_na = exclude_imputed_data_from_y(non_na_df,impute_list,args)
     
     # Unit testing
     assert not y_df_non_na.isnull().values.any(), "Returned data contains NaN."
