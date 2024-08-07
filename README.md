@@ -1,6 +1,6 @@
 # Predicting Price Evolutions of the Purchases of Raw Materials - WIP
 
-## Description - WIP
+## Description - dev
 
 Accurate and effective raw material price prediction is critical for manufacturing enterprises to optimize the timing of
 raw material purchases. Company A is an international manufacturer of hygiene products, and has traditionally relied on
