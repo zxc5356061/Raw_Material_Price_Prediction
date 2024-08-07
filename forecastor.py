@@ -1,12 +1,12 @@
+import numpy as np
 import pandas as pd
 from sklearn.linear_model import Lasso
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import mean_absolute_percentage_error
-import numpy as np
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.preprocessing import StandardScaler
 
 
-def persistence_Naive_MAPE(raw_df:pd.DataFrame, code:str, lag:int, test_periods):
+def persistence_Naive_MAPE(raw_df: pd.DataFrame, code: str, lag: int, test_periods):
     """
     Calculate MAPE based on persistent Naive approach.
     
@@ -20,24 +20,23 @@ def persistence_Naive_MAPE(raw_df:pd.DataFrame, code:str, lag:int, test_periods)
     assert isinstance(lag, int), "Time lag is missed."
     assert lag > 0, "Time lag should be a positive int."
     assert len(test_periods) == 2, "There should only be one test_start and one test_end."
-    
-    df = raw_df[raw_df[code]==True]
-    test_start, test_end = test_periods
-    
-    test_df = df[df.Time.between(test_start, test_end, inclusive = "left")]
-    
-    if lag == 1:
-        mape = mean_absolute_percentage_error(test_df['Average_price'],test_df['AR_1'])
-        assert mape > 0, "mape is negative!"
-        return round(mape*100,3)
-    elif lag > 1:
-        mape = mean_absolute_percentage_error(test_df['Average_price'],test_df[f'AR_{lag}'])
-        assert mape > 0, "mape is negative!"
-        return round(mape*100,3)
 
-    
-    
-def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_bottom = 0.01, return_coef = False):
+    df = raw_df[raw_df[code] == True]
+    test_start, test_end = test_periods
+
+    test_df = df[df.Time.between(test_start, test_end, inclusive="left")]
+
+    if lag == 1:
+        mape = mean_absolute_percentage_error(test_df['Average_price'], test_df['AR_1'])
+        assert mape > 0, "mape is negative!"
+        return round(mape * 100, 3)
+    elif lag > 1:
+        mape = mean_absolute_percentage_error(test_df['Average_price'], test_df[f'AR_{lag}'])
+        assert mape > 0, "mape is negative!"
+        return round(mape * 100, 3)
+
+
+def train_model_AR(raw_df: pd.DataFrame, code: str, lag: int, test_periods, alpha_bottom=0.01, return_coef=False):
     """
     Train Lasso models based on individual RM code with only autoregression features and given test periods
     
@@ -80,29 +79,27 @@ def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_b
     assert not len(code) == 0, "RM_codes are missed."
     assert isinstance(lag, int), "Time lag is missed."
     assert lag > 0, "Time lag should be a positive int."
-    assert len(test_periods) == 2, "There should only be one test_start and one test_end." 
+    assert len(test_periods) == 2, "There should only be one test_start and one test_end."
 
-    df = raw_df[raw_df[code]==True]
-    
+    df = raw_df[raw_df[code] == True]
+
     test_start, test_end = test_periods
-    
+
     # Split data into train and test sets based on given test periods
     train_df = df[df.Time < test_start]
-    test_df = df[df.Time.between(test_start, test_end, inclusive = "left")]
+    test_df = df[df.Time.between(test_start, test_end, inclusive="left")]
 
     X_train = train_df.filter(regex='^AR_')
     X_test = test_df.filter(regex='^AR_')
-    
 
     # Handle time lag parameter
     if lag > 1:
-        conditions = tuple((f"_{i}" for i in range(1,lag)))
-        assert_con = tuple((f"_{i}$" for i in range(1,lag)))
-        X_train = X_train.loc[:,~X_train.columns.str.endswith(conditions)]
-        X_test = X_test.loc[:,~X_test.columns.str.endswith(conditions)]
+        conditions = tuple((f"_{i}" for i in range(1, lag)))
+        assert_con = tuple((f"_{i}$" for i in range(1, lag)))
+        X_train = X_train.loc[:, ~X_train.columns.str.endswith(conditions)]
+        X_test = X_test.loc[:, ~X_test.columns.str.endswith(conditions)]
         assert not X_train.filter(regex='|'.join(assert_con)).any(axis=1).any(), "X_train not filtered correctly"
         assert not X_test.filter(regex='|'.join(assert_con)).any(axis=1).any(), "X_test not filtered correctly"
-
 
     y_train = train_df['Average_price'].values
     y_test = test_df['Average_price'].values
@@ -113,8 +110,8 @@ def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_b
     X_test_scaled = scaler_x.transform(X_test)
 
     scaler_y = StandardScaler()
-    y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1,1))
-    y_test_scaled = scaler_y.transform(y_test.reshape(-1,1))
+    y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1, 1))
+    y_test_scaled = scaler_y.transform(y_test.reshape(-1, 1))
 
     # Define the parameter grid
     param_grid = {'alpha': np.linspace(alpha_bottom, 1, 3000)}
@@ -134,23 +131,23 @@ def train_model_AR(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_b
     best_lasso_model = random_search.best_estimator_
     # Predict on the test data
     y_pred_test = best_lasso_model.predict(X_test_scaled)
-    y_pred_test_inverse = scaler_y.inverse_transform(y_pred_test.reshape(-1,1))
-    mape = mean_absolute_percentage_error(y_test,y_pred_test_inverse)
+    y_pred_test_inverse = scaler_y.inverse_transform(y_pred_test.reshape(-1, 1))
+    mape = mean_absolute_percentage_error(y_test, y_pred_test_inverse)
     assert mape > 0, "mape is negative!"
-    
+
     ## To return coef of each models if necessary
     if return_coef == True:
         coef_sum = dict()
         assert random_search.n_features_in_ == len(X_test.columns), "n_features !=len(X_test.columns)"
         for feature, coefficient in zip(X_test.columns, random_search.best_estimator_.coef_):
             coef_sum[feature] = round(coefficient, 5)
-        return mape*100, coef_sum
+        return mape * 100, coef_sum
     else:
-        return mape*100
-    
-    
-    
-def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_periods, alpha_bottom = 0.01, return_coef = False):
+        return mape * 100
+
+
+def train_model_all_features(raw_df: pd.DataFrame, code: str, lag: int, test_periods, alpha_bottom=0.01,
+                             return_coef=False):
     """
     Train Lasso models based on individual RM code with autoregression features and external price drivers and given test periods
     
@@ -193,30 +190,29 @@ def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_period
     assert not len(code) == 0, "RM_codes are missed."
     assert isinstance(lag, int), "Time lag is missed."
     assert lag > 0, "Time lag should be a positive int."
-    assert len(test_periods) == 2, "There should only be one test_start and one test_end." 
+    assert len(test_periods) == 2, "There should only be one test_start and one test_end."
 
-    df = raw_df[raw_df[code]==True]
-    df = df.loc[:,~df.columns.str.startswith("RM")]
-    
+    df = raw_df[raw_df[code] == True]
+    df = df.loc[:, ~df.columns.str.startswith("RM")]
+
     test_start, test_end = test_periods
-    
+
     # Split data into train and test sets based on given test periods
     train_df = df[df.Time < test_start]
-    test_df = df[df.Time.between(test_start, test_end, inclusive = "left")]
+    test_df = df[df.Time.between(test_start, test_end, inclusive="left")]
 
-    X_train = train_df.drop(['Time', 'Group Description', 'Year','Month','Average_price'],axis=1)
-    X_test = test_df.drop(['Time', 'Group Description', 'Year','Month','Average_price'],axis=1)
-   
+    X_train = train_df.drop(['Time', 'Group Description', 'Year', 'Month', 'Average_price'], axis=1)
+    X_test = test_df.drop(['Time', 'Group Description', 'Year', 'Month', 'Average_price'], axis=1)
+
     # Handle time lag parameter
     if lag > 1:
-        conditions = tuple((f"_{i}" for i in range(1,lag)))
-        assert_con = tuple((f"_{i}$" for i in range(1,lag)))
-        X_train = X_train.loc[:,~X_train.columns.str.endswith(conditions)]
-        X_test = X_test.loc[:,~X_test.columns.str.endswith(conditions)]
+        conditions = tuple((f"_{i}" for i in range(1, lag)))
+        assert_con = tuple((f"_{i}$" for i in range(1, lag)))
+        X_train = X_train.loc[:, ~X_train.columns.str.endswith(conditions)]
+        X_test = X_test.loc[:, ~X_test.columns.str.endswith(conditions)]
         assert not X_train.filter(regex='|'.join(assert_con)).any(axis=1).any(), "X_train not filtered correctly"
         assert not X_test.filter(regex='|'.join(assert_con)).any(axis=1).any(), "X_test not filtered correctly"
-    
-    
+
     y_train = train_df['Average_price'].values
     y_test = test_df['Average_price'].values
 
@@ -226,8 +222,8 @@ def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_period
     X_test_scaled = scaler_x.transform(X_test)
 
     scaler_y = StandardScaler()
-    y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1,1))
-    y_test_scaled = scaler_y.transform(y_test.reshape(-1,1))
+    y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1, 1))
+    y_test_scaled = scaler_y.transform(y_test.reshape(-1, 1))
 
     # Define the parameter grid
     param_grid = {'alpha': np.linspace(alpha_bottom, 1, 3000)}
@@ -247,8 +243,8 @@ def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_period
     best_lasso_model = random_search.best_estimator_
     # Predict on the test data
     y_pred_test = best_lasso_model.predict(X_test_scaled)
-    y_pred_test_inverse = scaler_y.inverse_transform(y_pred_test.reshape(-1,1))
-    mape = mean_absolute_percentage_error(y_test,y_pred_test_inverse)
+    y_pred_test_inverse = scaler_y.inverse_transform(y_pred_test.reshape(-1, 1))
+    mape = mean_absolute_percentage_error(y_test, y_pred_test_inverse)
     assert mape > 0, "mape is negative!"
 
     ## To return coef of each models if necessary
@@ -257,9 +253,6 @@ def train_model_all_features(raw_df:pd.DataFrame, code:str, lag:int, test_period
         assert random_search.n_features_in_ == len(X_test.columns), "n_features !=len(X_test.columns)"
         for feature, coefficient in zip(X_test.columns, random_search.best_estimator_.coef_):
             coef_sum[feature] = round(coefficient, 5)
-        return mape*100, coef_sum
+        return mape * 100, coef_sum
     else:
-        return mape*100
-    
-
-
+        return mape * 100
