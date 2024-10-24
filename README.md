@@ -19,23 +19,29 @@ prices.
 
 The project contains several major sections.
 
-- The `Data_flat_files` contains raw data and processed features for all materials.
-- The `Results` contains visualisations and trained models.
-- The `forecastor` contains functions to train models.
-- The `naiveforecastor` - TBC
-- The `preprocessor` contains functions to import, clean, transform, and engineer features.
-- The `visualiser` contains visualisations and trained models.
+- `data`
+  - The `raw/` contains raw data.
+  - The `generated_features/` contains processed features for all materials for references.
+  - The `coefficient_export/` contains exported feature coefficients of Lasso regression models for references.
+- `notebook`
+  - The `exploration/` contains the visualisation of historical rm codes prices.
+  - The `modelling/` contains trained models.
+- `src`
+  - The `forecastor` contains functions to train models.
+  - The `naiveforecastor` - TBC
+  - The `preprocessor` contains functions to import, clean, transform, and engineer features.
+  - The `visualiser` contains visualisations and trained models.
 
 ## Project layout
 
 ```text
 Raw_Material_Price_Prediction/
-    ├── Data_flat_files/
-        ├── Dataset_Future_Predicting_Price_Evolutions_202403.csv
-        ├── Dataset_Predicting_Price_Evolutions_202310.csv
-        ├── ELECTRICITY_03_2024.csv
-        ├── alkalis_all_features_coef_.csv
-        └── features_csv/
+    ├── data/
+        ├── raw/
+            ├── Dataset_Future_Predicting_Price_Evolutions_202403.csv
+            ├── Dataset_Predicting_Price_Evolutions_202310.csv
+            └── ELECTRICITY_03_2024.csv
+        ├── generated_features/
             ├── acid_feature.csv
             ├── alkalis_feature.csv
             ├── anionic surfactant_feature.csv
@@ -43,22 +49,23 @@ Raw_Material_Price_Prediction/
             ├── builder_feature.csv
             ├── fatty acid_feature.csv
             ├── non-ionic surfactant_feature.csv
-            ├── solvent_feature.csv
-            └── page2.py
-    |── References/
-        ├── Ref)Acid_random_split.ipynb
-        ├── Ref)First_Model.ipynb
-        └── Ref)Predicting Price Evolutions.ipynb
-    ├── Results/
-        ├── Visualise_all_RMs_actual.ipynb
-        ├── Acid.ipynb
-        └── Non-ionic surfactant.ipynb
+            └── solvent_feature.csv
+        └── coefficient_export
+            └── alkalis_all_features_coef_.csv
+    ├── notebook/
+        ├── exploration/
+            └── Visualise_all_RMs_actual.ipynb
+        └── modelling/
+            ├── Acid.ipynb
+            └── Non-ionic surfactant.ipynb
+    ├── src/
+        ├── forecastor.py
+        ├── naiveforecastor.py
+        ├── preprocessor.py  
+        └── visualiser.py
     ├── .gitignore
-    ├── forecastor.py
-    ├── naiveforecastor.py
-    ├── preprocessor.py  
-    ├── visualiser.py
     └── README.md
+
 ```
 
 ## Approaches - WIP
