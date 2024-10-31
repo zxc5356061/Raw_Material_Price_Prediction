@@ -137,8 +137,13 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     # To ensure inputted Key RM Codes belong to corresponding Group Description
     valid_codes = raw_df['Key RM code']
     raw_df['Group Description'] = raw_df['Group Description'].str.lower()
-    assert raw_df.loc[valid_codes.isin(
-        args), 'Group Description'].unique().all() == target, "RM codes don't align with the group description."
+
+    try:
+        check = raw_df.loc[valid_codes.isin(args), 'Group Description'].drop_duplicates().item()
+    except ValueError:
+        raise Exception("Please check input RM codes")
+
+    assert check == target, f"RM codes don't align with the group description: {check}."
     for i in args:
         if i not in valid_codes.unique():
             raise Exception(f"{i} is not a valid RM code.")

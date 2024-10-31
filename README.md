@@ -134,13 +134,13 @@ Raw_Material_Price_Prediction/
     - $ brew install pyenv
     - $ brew install pyenv-virtualenv
 3. To install Python version 3.10.12 and activate
-    - $ pyenv install 3.10.12 <name>
-    - $ pyenv virtualenv 3.10.12 <name>
-    - $ pyenv local <name>
+    - $ pyenv install 3.10.12
+    - $ pyenv virtualenv 3.10.12 <given_name>
+    - $ pyenv local <given_name>
 4. Check Python interpreter version
     1. Pycharm > Python Interpreter > Add new Interpreter > Add local interpreter > Virtualenv Environment > Location: ~
        /Raw_Material_Price_Prediction/.venv
-    2. Check interpreter name as : "Python 3.10.12 <name>"
+    2. Check interpreter name as : "Python 3.10 given_name"
 
 ### 2.2. Install requirements
 
