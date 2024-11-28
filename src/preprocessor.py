@@ -2,18 +2,22 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 from fredapi import Fred
+import json
+
+def lambda_handler(event, context):
+    pass
 
 
 def get_Fred_data(target: str, \
                   start_year: int, \
                   end_year: int, \
                   apiKey: str = '29219060bc68b2802af8584e0f328b52') -> pd.DataFrame:
-    '''To extract data from Fred database: https://fred.stlouisfed.org/ 
+    """To extract data from Fred database: https://fred.stlouisfed.org/ 
     apiKey = '29219060bc68b2802af8584e0f328b52'
     PWHEAMTUSDM - wheat https://fred.stlouisfed.org/series/PWHEAMTUSDM
     WPU0652013A - Ammonia https://fred.stlouisfed.org/series/WPU0652013A
     PNGASEUUSDM - TTG_Gas https://fred.stlouisfed.org/series/PNGASEUUSDM
-    '''  # get_Fred_data.__doc__
+    """  # get_Fred_data.__doc__
     assert start_year <= end_year, 'start_year can not exceed end_year'
     assert end_year <= datetime.now().year, 'end_year can not include future date'
 
@@ -37,9 +41,9 @@ def get_Fred_data(target: str, \
 
 
 def clean_elec_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
-    '''
+    """
     To clean ELECTRICITY.csv correctly for following pre-processing steps
-    '''
+    """
     assert start_year <= end_year, 'start_year can not exceed end_year'
     assert end_year <= datetime.now().year, 'end_year can not include future date'
 
@@ -53,9 +57,9 @@ def clean_elec_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
 
 
 def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
-    '''
+    """
     To clean Dataset_Predicting_Price_Evolutions.csv correctly for following pre-processing steps
-    '''
+    """
     assert start_year <= end_year, 'start_year can not exceed end_year'
     assert end_year <= datetime.now().year, 'end_year can not include future date'
 
@@ -78,15 +82,15 @@ def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.Da
 
 
 def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
-    '''
+    """
     1. Create all combinations of Year Month and Key RM Codes
     2. Map the combinations with the imported raw material prices to ensure having all RM Codes for each months
     3. Impute Year, Month, Prices (Forward Fill)
-    
+
     Return two Dataframes: df_not_null, missing
     -> df_not_null: Complete dataframe imputed by forward fill method
     -> missing: Rows needed to be imputed
-    '''
+    """
     RM_list = old_df['Key RM code'].unique()
 
     # Create combinations of ['Year','Month','Key RM code']
@@ -125,7 +129,7 @@ def impute_pred_price_evo_csv(old_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str) -> pd.DataFrame:
-    '''
+    """
     *args: str -> Key RM Codes corresponding to the target variable, create N dummy variables
     # auto filter df based on given target_name and key rm codes
     # to auto calculate the monthly average prices of the target variable
@@ -133,7 +137,7 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     # output columns: 'Time', 'Group Description', 'Year', 'Month', 'RM02/0002',
        'Average_price'
     # To aggregate all observations with year, month, Key RM Code -> Not implemented yet
-    '''
+    """
     # To ensure inputted Key RM Codes belong to corresponding Group Description
     valid_codes = raw_df['Key RM code']
     raw_df['Group Description'] = raw_df['Group Description'].str.lower()
@@ -247,11 +251,11 @@ def exclude_imputed_data_from_y(y_df: pd.DataFrame, missing: pd.DataFrame, RM_co
 
 def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.DataFrame, *args: str,
                       **kwargs: pd.DataFrame) -> pd.DataFrame:
-    '''
+    """
     To generate features and combine y_df with historical prices of external price drivers and autoregressive prices of y.
     Supports N feature inputs and creates 12*N features, price changes from {start} months before prices to {end} months before prices
     This function only take imputed records without real purchasing for autoregression, but will exclude them from y, i.e. if there were purchases in Jan-2022 and Mar-2022, then we only predict y based on the data of Jan-2022 and Mar-2022, and exclude the imputed values in Feb-2022 to be one of the target variables(y).
-    
+
     Inputs:
     - start -> starting point of time lag duration
     - end -> ending point of time lag duration
@@ -260,10 +264,10 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
     - *args -> all Key RM codes correspinding to the group description of y
     - **kwargs -> {Name of external price drivers: df of external price driver data}
     - Note: Unable to check the correctness of inputted Key RM codes
-    
+
     Return:
     - y_df_non_na -> y_df with 1*N features, rows containing NaN will be excluded
-    
+
     Usage example:
     acid_df = generate_features(1,2,dummy_df,missing,\
                                  'RM01/0001',\
@@ -281,7 +285,7 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
        'Group Description', 'Average_price', 'PNGASEUUSDM_1', 'PWHEAMTUSDM_1',
        'WPU0652013A_1', 'Electricity_1', 'PNGASEUUSDM_2', 'PWHEAMTUSDM_2',
        'WPU0652013A_2', 'Electricity_2', 'AR_1', 'AR_2']
-    '''
+    """
     assert start <= end, 'Ending point should be later than starting point.'
     assert len(y_df) != 0, "Warning: Empty dataframe!"
     assert len(impute_list) != 0, "Warning: impute_list is empty."
