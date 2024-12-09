@@ -133,5 +133,3 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
 
     assert filtered_df_dummies.isnull().values.any() == False, "Imported/Returned data contains NaN."
     return filtered_df_dummies
-
-
