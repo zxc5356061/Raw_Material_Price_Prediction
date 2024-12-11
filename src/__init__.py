@@ -29,6 +29,10 @@ from src.naiveforecastor import (
     naive_forest
 )
 
+from src.format_handle import (
+    json_to_dataframe
+)
+
 # The __all__ variable in __init__.py is used to define which symbols (functions, classes, etc.)
 # should be accessible when using from module import *.
 # It’s a good practice to explicitly define the functions you want to expose for public use.
@@ -45,5 +49,6 @@ __all__ = [
     train_model_AR,
     train_model_all_features,
     draw_graph,
-    naive_forest
+    naive_forest,
+    json_to_dataframe
 ]
