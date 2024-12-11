@@ -1,7 +1,7 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
 from src import extract_and_clean as ec
 from src import transform as ts
-import matplotlib.pyplot as plt
-import seaborn as sns;
 
 sns.set_style("whitegrid")
 
@@ -20,7 +20,7 @@ def draw_actual_combined_graphs(df, target_dict):
 
             # Plot each RM code's price evolution
             sns.lineplot(data=code_df, x='year_month', y='PRICE (EUR/kg)', label=code,
-                         ci=None)  # ci=None to remove graph shaded area
+                         errorbar=None)  # errorbar=None to remove graph shaded area
 
             filtered_df = code_df[code_df['year_month'].str.endswith(('3', '6', '9', '12'))]
             plt.xticks(ticks=filtered_df['year_month'], label=filtered_df['year_month'], rotation=45)
@@ -46,7 +46,7 @@ def draw_actual_individual_graphs(df, target_dict):
 
         # Plot each RM code's price evolution
         sns.lineplot(data=code_df, x='year_month', y='PRICE (EUR/kg)', label=code,
-                     ci=None)  # ci=None to remove graph shaded area
+                     errorbar=None)  # errorbar=None to remove graph shaded area
 
         filtered_df = code_df[code_df['year_month'].str.endswith(('3', '6', '9', '12'))]
         plt.xticks(ticks=filtered_df['year_month'], label=filtered_df['year_month'], rotation=45)
