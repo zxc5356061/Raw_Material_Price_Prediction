@@ -27,7 +27,7 @@ The project contains several major sections.
   - The `raw/` contains raw data.
   - The `generated_features/` contains processed features for all materials for references.
   - The `coefficient_export/` contains exported feature coefficients of Lasso regression models for references.
-- `notebook`
+- `results`
   - The `exploration/` contains the visualisation of historical rm codes prices.
   - The `modelling/` contains trained models.
 - `src`
@@ -36,7 +36,7 @@ The project contains several major sections.
   - The `preprocessor` contains functions to import, clean, transform, and engineer features.
   - The `visualiser` contains visualisations and trained models.
 
-## Project layout
+## Project layout - WIP
 
 ```text
 Raw_Material_Price_Prediction/
