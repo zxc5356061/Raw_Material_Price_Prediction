@@ -4,4 +4,7 @@
     <option name="sdkName" value="Python 3.10 (dataHubPython)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (Raw_Material_Price_Prediction)" project-jdk-type="Python SDK" />
+  <component name="PythonCompatibilityInspectionAdvertiser">
+    <option name="version" value="3" />
+  </component>
 </project>

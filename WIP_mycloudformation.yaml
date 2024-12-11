@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2024-11-28"
+Description: Data Pipeline Using AWS Lambda for raw material price prediction project
+
+Resources:
+  # Raw Data S3 Bucket
+  RawDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: material-price-prediction-raw-28nov2024
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: "s3:ObjectCreated:*"
+            Function: !GetAtt PreprocessorLambda.Arn
+
+  # Processed Data S3 Bucket
+  ProcessedDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: material-price-prediction-raw-processed-28nov2024
+
+  LambdaCodeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: barry-lambda-code-bucket
+
+  # Lambda for ETL
+  PreprocessorLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: Preprocessor
+      Handler: preprocessor.lambda_handler
+      Runtime: python3.10
+      Code:
+        S3Bucket: barry-lambda-code-bucket
+        S3Key: preprocessor_function.zip
+      Role: !GetAtt LambdaExecutionRole.Arn
+
+#  # Lambda for Transforming Data
+#  VisualiserLambda:
+#    Type: AWS::Lambda::Function
+#    Properties:
+#      FunctionName: Visualiser
+#      Handler: visualiser.lambda_handler
+#      Runtime: python3.10
+#      Code:
+#        S3Bucket: barry-lambda-code-bucket
+#        S3Key: visualiser_function.zip
+#      Role: !GetAtt LambdaExecutionRole.Arn
+#
+#  # Lambda for Loading Data
+#  ForecastorLambda:
+#    Type: AWS::Lambda::Function
+#    Properties:
+#      FunctionName: Forecastor
+#      Handler: forecastor.lambda_handler
+#      Runtime: python3.10
+#      Code:
+#        S3Bucket: barry-lambda-code-bucket
+#        S3Key: forecastor_function.zip
+#      Role: !GetAtt LambdaExecutionRole.Arn
+
+  # IAM Role for Lambda Functions
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaS3Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub "arn:aws:s3:::material-price-prediction-raw-28nov2024/*"
+                  - !Sub "arn:aws:s3:::material-price-prediction-raw-processed-28nov2024/*"
+
+  # Permission for S3 to Invoke Lambda
+  S3InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PreprocessorLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !GetAtt RawDataBucket.Arn
