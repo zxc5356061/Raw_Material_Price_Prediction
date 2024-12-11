@@ -1,5 +1,9 @@
 # Predicting Price Evolutions of the Purchases of Raw Materials - WIP (Python 3.10.12)
 
+## Refactoring - WIP
+
+I'm currently working on refactoring the pipelines using AWS S3, Lambda, and Cloudformation.
+
 ## Description - WIP
 
 Accurate and effective raw material price prediction is critical for manufacturing enterprises to optimize the timing of
