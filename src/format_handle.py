@@ -1,7 +1,21 @@
 from io import StringIO
 import pandas as pd
 
-def json_to_dataframe(json_file, date_col:str):
+def json_to_dataframe(json_file:dict, date_col:str):
+    """
+    Convert a JSON file to a Pandas DataFrame and parse a specified date column.
+
+    Parameters:
+        json_file (dict): A dictionary with JSON string file under the 'body' key.
+        date_col (str): The column name in the DataFrame to parse as datetime.
+
+    Returns:
+        pd.DataFrame: A DataFrame with the date column parsed, or None if an error occurs.
+
+    Raises:
+        ValueError: If required keys or data are missing.
+        KeyError: If the specified date column is not found in the DataFrame.
+    """
     try:
         # Ensure 'body' key exists in json_file
         if 'body' not in json_file:

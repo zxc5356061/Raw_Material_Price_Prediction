@@ -11,12 +11,16 @@ def lambda_handler(event, context):
 def get_Fred_data(target: str,
                   start_year: int,
                   end_year: int,
-                  apikey: str = '29219060bc68b2802af8584e0f328b52') -> pd.DataFrame:
+                  apikey: str = '29219060bc68b2802af8584e0f328b52') -> dict:
     """To extract data from Fred database: https://fred.stlouisfed.org/ 
     apiKey = '29219060bc68b2802af8584e0f328b52'
     PWHEAMTUSDM - wheat https://fred.stlouisfed.org/series/PWHEAMTUSDM
     WPU0652013A - Ammonia https://fred.stlouisfed.org/series/WPU0652013A
     PNGASEUUSDM - TTG_Gas https://fred.stlouisfed.org/series/PNGASEUUSDM
+    
+    Returns: dict
+        "statusCode": 200
+        "body": df.to_json(orient='records', date_format='iso')
     """  # get_Fred_data.__doc__
     assert start_year <= end_year, 'start_year can not exceed end_year'
     assert end_year <= datetime.now().year, 'end_year can not include future date'
@@ -37,13 +41,20 @@ def get_Fred_data(target: str,
     df[target] = df[target].ffill()
 
     assert df.isnull().values.any() == False, "Imported data contains NaN."
+    return {
+        "statusCode": 200,
+        "body": df.to_json(orient='records', date_format='iso')
+    }
 
-    return df
 
 
-def clean_elec_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
+def clean_elec_csv(file: str, start_year: int, end_year: int) -> dict:
     """
     To clean ELECTRICITY.csv correctly for following pre-processing steps
+
+    Returns: dict
+        "statusCode": 200
+        "body": df.to_json(orient='records', date_format='iso')
     """
     assert start_year <= end_year, 'start_year can not exceed end_year'
     assert end_year <= datetime.now().year, 'end_year can not include future date'
@@ -54,12 +65,19 @@ def clean_elec_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
     df = df[df['Year'].between(start_year, end_year)].reset_index().drop('index', axis=1)
 
     assert df.isnull().values.any() == False, "Imported/Returned data contains NaN."
-    return df
+    return {
+        "statusCode": 200,
+        "body": df.to_json(orient='records', date_format='iso')
+    }
 
 
 def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
     """
     To clean Dataset_Predicting_Price_Evolutions.csv correctly for following pre-processing steps
+
+    Returns: dict
+        "statusCode": 200
+        "body": df.to_json(orient='records', date_format='iso')
     """
     assert start_year <= end_year, 'start_year can not exceed end_year'
     assert end_year <= datetime.now().year, 'end_year can not include future date'
@@ -79,4 +97,8 @@ def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.Da
     df = df.drop(['SITE', 'SUPPLIER NUMBER', 'PURCHASE NUMBER', 'WEIGHT (kg)'], axis=1)
 
     assert df.isnull().values.any() == False, "Imported/Returned data contains NaN."
-    return df
+    return {
+        "statusCode": 200,
+        "body": df.to_json(orient='records', date_format='iso')
+    }
+
