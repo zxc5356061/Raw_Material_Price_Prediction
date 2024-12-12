@@ -1,7 +1,7 @@
 from io import StringIO
 import pandas as pd
 
-def json_to_dataframe(json_file:dict, date_col:str):
+def json_to_dataframe(json_file:dict, date_col:str='Time'):
     """
     Convert a JSON file to a Pandas DataFrame and parse a specified date column.
 

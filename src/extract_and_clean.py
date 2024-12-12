@@ -1,14 +1,53 @@
+import json
 from datetime import datetime
 
 import pandas as pd
 from fredapi import Fred
 
+from src import format_handle
+
 
 def lambda_handler(event, context):
-    pass
+    """
+    not test yet
+    :param event:
+    :param context:
+    :return: dict file with dataframe as json string under 'body' key
+    """
+    try:
+        # Inputs from event
+        target = event['target']
+        target_type = event['target_type']
+        start_year = event['start_year']
+        end_year = event['end_year']
+        file_path = event['file_path']
+
+        # Extract data
+        if target_type == 'Fred':
+            data_dict = get_fred_data(target, start_year, end_year)
+            data_df = format_handle.json_to_dataframe(data_dict, 'Time')
+        elif target_type == 'electricity':
+            data_dict = clean_elec_csv(file_path, start_year, end_year)
+            data_df = format_handle.json_to_dataframe(data_dict, 'Time')
+        elif target_type == 'pred_price_evo':
+            df_dict = clean_pred_price_evo_csv(file_path, start_year, end_year)
+            data_df = format_handle.json_to_dataframe(df_dict, 'Time')
+        else:
+            raise Exception("Please check given target type")
+
+        # Output
+        return {
+            "statusCode": 200,
+            "body": data_df.to_json(orient="records", date_format="iso")
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)})
+        }
 
 
-def get_Fred_data(target: str,
+def get_fred_data(target: str,
                   start_year: int,
                   end_year: int,
                   apikey: str = '29219060bc68b2802af8584e0f328b52') -> dict:
@@ -47,7 +86,6 @@ def get_Fred_data(target: str,
     }
 
 
-
 def clean_elec_csv(file: str, start_year: int, end_year: int) -> dict:
     """
     To clean ELECTRICITY.csv correctly for following pre-processing steps
@@ -59,7 +97,7 @@ def clean_elec_csv(file: str, start_year: int, end_year: int) -> dict:
     assert start_year <= end_year, 'start_year can not exceed end_year'
     assert end_year <= datetime.now().year, 'end_year can not include future date'
 
-    # Import monthly electrcity data
+    # Import monthly electricity data
     df = pd.read_csv(file).iloc[:, 1:]
     df['Time'] = pd.to_datetime(df['Year'].astype(str) + df['Month'].astype(str), format='%Y%m')
     df = df[df['Year'].between(start_year, end_year)].reset_index().drop('index', axis=1)
@@ -71,7 +109,7 @@ def clean_elec_csv(file: str, start_year: int, end_year: int) -> dict:
     }
 
 
-def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
+def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> dict:
     """
     To clean Dataset_Predicting_Price_Evolutions.csv correctly for following pre-processing steps
 
@@ -82,7 +120,7 @@ def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.Da
     assert start_year <= end_year, 'start_year can not exceed end_year'
     assert end_year <= datetime.now().year, 'end_year can not include future date'
 
-    # Import price evaluatioin data
+    # Import price evaluation data
     df = pd.read_csv(file).iloc[:, 1:]
     df['Group Description'] = df['Group Description'].str.lower()
     df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='ISO8601')
@@ -101,4 +139,3 @@ def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.Da
         "statusCode": 200,
         "body": df.to_json(orient='records', date_format='iso')
     }
-

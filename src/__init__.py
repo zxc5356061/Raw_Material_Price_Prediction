@@ -1,5 +1,5 @@
 from src.extract_and_clean import (
-    get_Fred_data,
+    get_fred_data,
     clean_elec_csv,
     clean_pred_price_evo_csv,
 )
@@ -37,7 +37,7 @@ from src.format_handle import (
 # should be accessible when using from module import *.
 # It’s a good practice to explicitly define the functions you want to expose for public use.
 __all__ = [
-    get_Fred_data,
+    get_fred_data,
     clean_elec_csv,
     clean_pred_price_evo_csv,
     impute_pred_price_evo_csv,
