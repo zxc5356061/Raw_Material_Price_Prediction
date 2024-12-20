@@ -4,6 +4,4 @@ file_path = "/Users/huangp/Documents/Barry/sideproject/Raw_Material_Price_Predic
 
 df = pd.read_csv(file_path, index_col=0).dropna()
 
-# print(df.info())
-
 print(df[["Group Description", "Key RM code"]].groupby(["Group Description", "Key RM code"]).size())
