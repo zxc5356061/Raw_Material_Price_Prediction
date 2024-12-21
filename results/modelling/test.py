@@ -54,4 +54,12 @@ file_path = "/Users/barryhuang/Projects/Raw_Material_Price_Prediction/src/lambda
 with open(file_path, 'r') as file:
     event = json.load(file)
 
-print(lambda_test.lambda_1.lambda_handler(event))
+result = json.loads(lambda_test.lambda_1.lambda_handler(event)["body"])
+
+from io import StringIO
+import pandas as pd
+for file in result.values():
+    df = pd.read_json(StringIO(file), orient="records")
+    df["Time"] = pd.to_datetime(df["Time"], format="ISO8601")
+
+    print(df.head())

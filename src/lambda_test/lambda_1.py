@@ -1,17 +1,47 @@
 import json
 from datetime import datetime
 
+import boto3
 import pandas as pd
 from fredapi import Fred
 
+s3 = boto3.client('s3')
 
-def lambda_handler(event):
+
+def read_csv_from_s3(bucket, key):
     """
-    not test yet
-    :param event:
-    :param context:
-    :return: dict file with dataframe as json string under 'body' key
+    Reads a CSV file from S3 and returns it as a Pandas DataFrame.
     """
+    response = s3.get_object(Bucket=bucket, Key=key)
+    content = response['Body'].read().decode('utf-8')
+    return content
+
+
+def lambda_handler(event, context):
+    """
+    AWS Lambda function that processes external driver data (e.g., electricity, GDP, material prices)
+    and returns the cleaned data in JSON format.
+
+    :param event: dict
+        Input data with the following keys:
+        - "external_driver_duration" (dict): Start and end years for external driver data.
+        - "external_driver" (list): List of external drivers (e.g., "electricity", "gdp").
+        - "electricity_file" (str): Path to the electricity data file (CSV).
+        - "material_price_duration" (dict): Start and end years for material price data.
+        - "material_price_file" (str): Path to the material price data file (CSV).
+        - "target" (str): Target parameter for the data (e.g., "acid").
+        - "rm_code" (str): rm codes.
+
+    :return: dict
+        The response dictionary containing:
+        - "statusCode" (int): HTTP status code (200 for success, 500 for error).
+        - "body" (str): JSON string with from extracted dataframes.
+        - "target" (str): The "target" from the input event.
+        - "rm_code" (str): The "rm_code" from the input event.
+
+    This function processes and cleans external driver data (like electricity and GDP), then returns it as a JSON response.
+    """
+
     try:
         # Inputs from event
         external_driver_start = int(event["external_driver_duration"]["start_year"])
@@ -30,33 +60,66 @@ def lambda_handler(event):
 
         rm_codes = event["rm_code"]
 
+        bucket_name = event["bucket_name"]
+
         # Extract data
         data = {}
 
         for driver in external_drivers:
             if driver == "electricity":
-                df = clean_elec_csv(electricity_file, external_driver_start, external_driver_end)
-                df_json = df.to_json(orient="records", date_format="iso")
-                data[driver] = df_json
+                electricity_csv = read_csv_from_s3(bucket_name, electricity_file)
+                elec_df = clean_elec_csv(electricity_csv, external_driver_start, external_driver_end)
+                elec_json = elec_df.to_json(orient="records", date_format="iso")
+                data[driver] = elec_json
             else:
                 df = get_fred_data(driver, external_driver_start, external_driver_end)
                 df_json = df.to_json(orient="records", date_format="iso")
                 data[driver] = df_json
 
-        price_df = clean_pred_price_evo_csv(material_price_file_path, material_price_start, material_price_end)
+        price_csv = read_csv_from_s3(bucket_name, material_price_file_path)
+        price_df = clean_pred_price_evo_csv(price_csv, material_price_start, material_price_end)
         price_json = price_df.to_json(orient="records", date_format="iso")
         data["price"] = price_json
 
         # Output
         return {
             "statusCode": 200,
-            "body": json.dumps(data, indent=4)
+            "body": json.dumps(data, indent=4),
+            "target": target,
+            "rm_code": rm_codes
         }
     except Exception as e:
         return {
             "statusCode": 500,
             "body": json.dumps({"error": str(e)})
         }
+    #     payload = {
+    #         "data": data,
+    #         "target": target,
+    #         "rm_code": rm_codes
+    #     }
+    #
+    #     # Invoke the second Lambda
+    #     lambda_client = boto3.client("lambda")
+    #
+    #     response = lambda_client.invoke(
+    #         FunctionName="SecondLambdaFunctionName",  # Replace with your second Lambda's name
+    #         InvocationType="RequestResponse",  # Synchronous call
+    #         Payload=json.dumps(payload)
+    #     )
+
+    #     # Parse response
+    #     response_payload = json.loads(response["Payload"].read())
+    #     return {
+    #         "statusCode": 200,
+    #         "body": json.dumps({"first_lambda_data": data, "second_lambda_response": response_payload})
+    #     }
+    #
+    # except Exception as e:
+    #     return {
+    #         "statusCode": 500,
+    #         "body": json.dumps({"error": str(e)})
+    #     }
 
 
 def get_fred_data(target: str,

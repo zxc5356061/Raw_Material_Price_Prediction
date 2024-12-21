@@ -102,6 +102,15 @@ Raw_Material_Price_Prediction/
 [] Visualisation - all Key RM codes
 [] Visualisation - individual Key RM codes
 [] Compare Lasso with Naive forecast
+
+### Onto AWS
+[] Split preprocessor into extract_and_clean, transform, and feature_engineer
+[] Add def lambda_handler()
+    [] Modify def input/output as json formats 
+[] Import Numpy, Pandas, and fredapi onto AWS Lambda
+[] Enable extract_and_clean to get raw data from S3 buckets
+[] Have Lambda extract_and_clean to trigger Lambda transform, and Lambda transform to trigger Lambda feature_engineer
+[] Add each materials as individual test events
 ```
 
 | Group Description     | Price Driver                               | Size |
