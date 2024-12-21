@@ -78,6 +78,9 @@ This script copies the contents from the create_layer/lib directory into a new d
 1. Upload zip files onto Lambda layer
 2. Have the Lambda function to add the layer
 
+## Note
+- Only zip "fredapi-0.5.2.dist-info" and "fredapi" for fredapi package
+
 ## Official Documents
 1. [Working with .zip file archives for Python Lambda functions](https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)
 2. [Working with layers for Python Lambda functions](https://docs.aws.amazon.com/lambda/latest/dg/python-layers.html)
