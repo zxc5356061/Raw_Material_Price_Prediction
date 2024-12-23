@@ -44,11 +44,11 @@
 # feature_df = fe.generate_features(1,12,dummy_df,missing,*RM_codes, **external_drivers)
 import json
 
-import src.lambda_test.lambda_1
+import src.lambda_test.lambda_extract_and_clean
 from src import lambda_test
 
 # Path to your JSON file
-file_path = "/Users/barryhuang/Projects/Raw_Material_Price_Prediction/src/lambda_test/input.json"
+file_path = "/src/lambda_test/acid.json"
 
 # Open and load the JSON file as a dictionary named "event"
 with open(file_path, 'r') as file:

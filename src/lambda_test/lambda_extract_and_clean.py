@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from io import StringIO
 
 import boto3
 import pandas as pd
@@ -14,34 +15,10 @@ def read_csv_from_s3(bucket, key):
     """
     response = s3.get_object(Bucket=bucket, Key=key)
     content = response['Body'].read().decode('utf-8')
-    return content
+    return pd.read_csv(StringIO(content))
 
 
 def lambda_handler(event, context):
-    """
-    AWS Lambda function that processes external driver data (e.g., electricity, GDP, material prices)
-    and returns the cleaned data in JSON format.
-
-    :param event: dict
-        Input data with the following keys:
-        - "external_driver_duration" (dict): Start and end years for external driver data.
-        - "external_driver" (list): List of external drivers (e.g., "electricity", "gdp").
-        - "electricity_file" (str): Path to the electricity data file (CSV).
-        - "material_price_duration" (dict): Start and end years for material price data.
-        - "material_price_file" (str): Path to the material price data file (CSV).
-        - "target" (str): Target parameter for the data (e.g., "acid").
-        - "rm_code" (str): rm codes.
-
-    :return: dict
-        The response dictionary containing:
-        - "statusCode" (int): HTTP status code (200 for success, 500 for error).
-        - "body" (str): JSON string with from extracted dataframes.
-        - "target" (str): The "target" from the input event.
-        - "rm_code" (str): The "rm_code" from the input event.
-
-    This function processes and cleans external driver data (like electricity and GDP), then returns it as a JSON response.
-    """
-
     try:
         # Inputs from event
         external_driver_start = int(event["external_driver_duration"]["start_year"])
@@ -54,7 +31,7 @@ def lambda_handler(event, context):
         material_price_start = int(event["material_price_duration"]["start_year"])
         material_price_end = int(event["material_price_duration"]["end_year"])
 
-        material_price_file_path = event["material_price_file"]
+        material_price_file = event["material_price_file"]
 
         target = event["target"]
 
@@ -67,8 +44,8 @@ def lambda_handler(event, context):
 
         for driver in external_drivers:
             if driver == "electricity":
-                electricity_csv = read_csv_from_s3(bucket_name, electricity_file)
-                elec_df = clean_elec_csv(electricity_csv, external_driver_start, external_driver_end)
+                elec_raw = read_csv_from_s3(bucket_name, electricity_file)
+                elec_df = clean_elec_csv(elec_raw, external_driver_start, external_driver_end)
                 elec_json = elec_df.to_json(orient="records", date_format="iso")
                 data[driver] = elec_json
             else:
@@ -76,8 +53,8 @@ def lambda_handler(event, context):
                 df_json = df.to_json(orient="records", date_format="iso")
                 data[driver] = df_json
 
-        price_csv = read_csv_from_s3(bucket_name, material_price_file_path)
-        price_df = clean_pred_price_evo_csv(price_csv, material_price_start, material_price_end)
+        price_raw = read_csv_from_s3(bucket_name, material_price_file)
+        price_df = clean_pred_price_evo_csv(price_raw, material_price_start, material_price_end)
         price_json = price_df.to_json(orient="records", date_format="iso")
         data["price"] = price_json
 
@@ -93,33 +70,6 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"error": str(e)})
         }
-    #     payload = {
-    #         "data": data,
-    #         "target": target,
-    #         "rm_code": rm_codes
-    #     }
-    #
-    #     # Invoke the second Lambda
-    #     lambda_client = boto3.client("lambda")
-    #
-    #     response = lambda_client.invoke(
-    #         FunctionName="SecondLambdaFunctionName",  # Replace with your second Lambda's name
-    #         InvocationType="RequestResponse",  # Synchronous call
-    #         Payload=json.dumps(payload)
-    #     )
-
-    #     # Parse response
-    #     response_payload = json.loads(response["Payload"].read())
-    #     return {
-    #         "statusCode": 200,
-    #         "body": json.dumps({"first_lambda_data": data, "second_lambda_response": response_payload})
-    #     }
-    #
-    # except Exception as e:
-    #     return {
-    #         "statusCode": 500,
-    #         "body": json.dumps({"error": str(e)})
-    #     }
 
 
 def get_fred_data(target: str,
@@ -158,7 +108,7 @@ def get_fred_data(target: str,
     return df
 
 
-def clean_elec_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
+def clean_elec_csv(file: pd.DataFrame, start_year: int, end_year: int) -> pd.DataFrame:
     """
     To clean ELECTRICITY.csv correctly for following pre-processing steps
 
@@ -170,7 +120,8 @@ def clean_elec_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
     assert end_year <= datetime.now().year, 'end_year can not include future date'
 
     # Import monthly electricity data
-    df = pd.read_csv(file).iloc[:, 1:]
+    # df = pd.read_csv(file).iloc[:, 1:]
+    df = file
     df['Time'] = pd.to_datetime(df['Year'].astype(str) + df['Month'].astype(str), format='%Y%m')
     df = df[df['Year'].between(start_year, end_year)].reset_index().drop('index', axis=1)
 
@@ -178,7 +129,7 @@ def clean_elec_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
     return df
 
 
-def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.DataFrame:
+def clean_pred_price_evo_csv(file: pd.DataFrame, start_year: int, end_year: int) -> pd.DataFrame:
     """
     To clean Dataset_Predicting_Price_Evolutions.csv correctly for following pre-processing steps
 
@@ -190,7 +141,8 @@ def clean_pred_price_evo_csv(file: str, start_year: int, end_year: int) -> pd.Da
     assert end_year <= datetime.now().year, 'end_year can not include future date'
 
     # Import price evaluation data
-    df = pd.read_csv(file).iloc[:, 1:]
+    # df = pd.read_csv(file).iloc[:, 1:]
+    df = file
     df['Group Description'] = df['Group Description'].str.lower()
     df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='ISO8601')
     # df['POSTING DATE'] = pd.to_datetime(df['POSTING DATE'], format='%Y-%m-%d')
