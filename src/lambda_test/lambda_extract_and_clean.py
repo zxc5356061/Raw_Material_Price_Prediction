@@ -7,6 +7,7 @@ import pandas as pd
 from fredapi import Fred
 
 s3 = boto3.client('s3')
+lambda_client = boto3.client('lambda')
 
 
 def read_csv_from_s3(bucket, key):
@@ -58,18 +59,51 @@ def lambda_handler(event, context):
         price_json = price_df.to_json(orient="records", date_format="iso")
         data["price"] = price_json
 
-        # Output
-        return {
-            "statusCode": 200,
+        # Invoke Lambda_transform
+        lambda_transform_payload = {
             "body": json.dumps(data, indent=4),
             "target": target,
             "rm_code": rm_codes
         }
+
+        response = lambda_client.invoke(
+            FunctionName="transform",
+            InvocationType="RequestResponse",
+            Payload=json.dumps(lambda_transform_payload)
+        )
+
+        # Parse the response from Lambda_2
+        response_payload = json.load(response['Payload'])
+        if response_payload.get("statusCode") == 200:
+            print("Well received from Lambda 1")
+            return {
+                "statusCode": 200,
+                "body": json.dumps("Well received from Lambda 1", indent=4)
+            }
+        else:
+            error_message = response_payload.get("body")
+            return {
+                "statusCode": 500,
+                "body": json.dumps({"Error in Lambda_2": error_message}, indent=4)
+            }
     except Exception as e:
         return {
             "statusCode": 500,
             "body": json.dumps({"error": str(e)})
         }
+
+    #     # Output
+    #     return {
+    #         "statusCode": 200,
+    #         "body": json.dumps(data, indent=4),
+    #         "target": target,
+    #         "rm_code": rm_codes
+    #     }
+    # except Exception as e:
+    #     return {
+    #         "statusCode": 500,
+    #         "body": json.dumps({"error": str(e)})
+    #     }
 
 
 def get_fred_data(target: str,
