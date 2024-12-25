@@ -61,16 +61,20 @@ def lambda_handler(event, context):
 
         # Invoke Lambda_transform
         lambda_transform_payload = {
-            "body": json.dumps(data, indent=4),
+            "data": json.dumps(data, indent=4),
             "target": target,
             "rm_code": rm_codes
         }
+
+        # print(lambda_transform_payload)
 
         response = lambda_client.invoke(
             FunctionName="transform",
             InvocationType="RequestResponse",
             Payload=json.dumps(lambda_transform_payload)
         )
+
+        print(response)
 
         # Parse the response from Lambda_2
         response_payload = json.load(response['Payload'])
@@ -91,19 +95,6 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"error": str(e)})
         }
-
-    #     # Output
-    #     return {
-    #         "statusCode": 200,
-    #         "body": json.dumps(data, indent=4),
-    #         "target": target,
-    #         "rm_code": rm_codes
-    #     }
-    # except Exception as e:
-    #     return {
-    #         "statusCode": 500,
-    #         "body": json.dumps({"error": str(e)})
-    #     }
 
 
 def get_fred_data(target: str,
