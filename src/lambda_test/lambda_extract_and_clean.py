@@ -9,7 +9,6 @@ from fredapi import Fred
 s3 = boto3.client('s3')
 lambda_client = boto3.client('lambda')
 
-
 def read_csv_from_s3(bucket, key):
     """
     Reads a CSV file from S3 and returns it as a Pandas DataFrame.
@@ -47,26 +46,37 @@ def lambda_handler(event, context):
             if driver == "electricity":
                 elec_raw = read_csv_from_s3(bucket_name, electricity_file)
                 elec_df = clean_elec_csv(elec_raw, external_driver_start, external_driver_end)
-                elec_json = elec_df.to_json(orient="records", date_format="iso")
+                elec_json = elec_df.to_json(orient="records", date_format="iso", index=False)
                 data[driver] = elec_json
             else:
                 df = get_fred_data(driver, external_driver_start, external_driver_end)
-                df_json = df.to_json(orient="records", date_format="iso")
+                df_json = df.to_json(orient="records", date_format="iso", index=False)
                 data[driver] = df_json
 
         price_raw = read_csv_from_s3(bucket_name, material_price_file)
         price_df = clean_pred_price_evo_csv(price_raw, material_price_start, material_price_end)
-        price_json = price_df.to_json(orient="records", date_format="iso")
+        price_json = price_df.to_json(orient="records", date_format="iso", index=False)
         data["price"] = price_json
 
         # Invoke Lambda_transform
         lambda_transform_payload = {
-            "data": json.dumps(data, indent=4),
+            "data": data,
             "target": target,
             "rm_code": rm_codes
         }
 
-        # print(lambda_transform_payload)
+        # # Save the payload to a file for testing
+        # s3_client = boto3.client("s3")
+        # s3_bucket_name = "raw-material-price-prediction-output"
+        # s3_key = "test/extract_and_clean_output.json"
+        #
+        # # Save the payload to /tmp
+        # with open("/tmp/extract_and_clean_output.json", "w") as f:
+        #     json.dump(lambda_transform_payload, f, indent=4)
+        #
+        # # Upload the file to S3
+        # s3_client.upload_file("/tmp/extract_and_clean_output.json", s3_bucket_name, s3_key)
+        # print(f"File uploaded to s3://{s3_bucket_name}/{s3_key}")
 
         response = lambda_client.invoke(
             FunctionName="transform",
@@ -74,15 +84,13 @@ def lambda_handler(event, context):
             Payload=json.dumps(lambda_transform_payload)
         )
 
-        print(response)
-
         # Parse the response from Lambda_2
         response_payload = json.load(response['Payload'])
         if response_payload.get("statusCode") == 200:
             print("Well received from Lambda 1")
             return {
                 "statusCode": 200,
-                "body": json.dumps("Well received from Lambda 1", indent=4)
+                "body": json.dumps(response_payload.get("body"), indent=4)
             }
         else:
             error_message = response_payload.get("body")

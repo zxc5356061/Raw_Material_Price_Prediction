@@ -1,7 +1,7 @@
 from io import StringIO
 import pandas as pd
 
-def json_to_dataframe(json_file:dict, date_col:str='Time'):
+def json_to_dataframe(field: str, json_file:dict, date_col:str='Time'):
     """
     Convert a JSON file to a Pandas DataFrame and parse a specified date column.
 
@@ -15,11 +15,12 @@ def json_to_dataframe(json_file:dict, date_col:str='Time'):
     Raises:
         ValueError: If required keys or data are missing.
         KeyError: If the specified date column is not found in the DataFrame.
+        :param field:
     """
     try:
         # Ensure 'body' key exists in json_file
-        if 'body' not in json_file:
-            raise ValueError("Missing 'body' key in the provided JSON file.")
+        if field not in json_file:
+            raise ValueError(f"Missing {field} key in the provided JSON file.")
 
         df = pd.read_json(StringIO(json_file['body']), orient="records")
 
