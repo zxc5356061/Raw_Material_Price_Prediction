@@ -9,6 +9,7 @@ from fredapi import Fred
 s3 = boto3.client('s3')
 lambda_client = boto3.client('lambda')
 
+
 def read_csv_from_s3(bucket, key):
     """
     Reads a CSV file from S3 and returns it as a Pandas DataFrame.
@@ -37,6 +38,9 @@ def lambda_handler(event, context):
 
         rm_codes = event["rm_code"]
 
+        feature_duration_start = int(event["feature_duration"]["start_month"])
+        feature_duration_end = int(event["feature_duration"]["end_month"])
+
         bucket_name = event["bucket_name"]
 
         # Extract data
@@ -62,7 +66,9 @@ def lambda_handler(event, context):
         lambda_transform_payload = {
             "data": data,
             "target": target,
-            "rm_code": rm_codes
+            "rm_code": rm_codes,
+            "feature_duration_start": feature_duration_start,
+            "feature_duration_end": feature_duration_end
         }
 
         # # Save the payload to a file for testing
@@ -87,7 +93,6 @@ def lambda_handler(event, context):
         # Parse the response from Lambda_2
         response_payload = json.load(response['Payload'])
         if response_payload.get("statusCode") == 200:
-            print("Well received from Lambda 1")
             return {
                 "statusCode": 200,
                 "body": json.dumps(response_payload.get("body"), indent=4)

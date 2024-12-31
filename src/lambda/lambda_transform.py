@@ -1,6 +1,10 @@
 import json
 
+import boto3
 import pandas as pd
+
+lambda_client = boto3.client("lambda")
+
 
 def lambda_handler(event, context):
     try:
@@ -8,12 +12,16 @@ def lambda_handler(event, context):
         data = event.get("data", None)
         target = event.get("target", None)
         rm_code = event.get("rm_code", None)
+        feature_duration_start = event.get("feature_duration_start", None)
+        feature_duration_end = event.get("feature_duration_end", None)
 
         # Validate inputs
         required_fields = {
             "data": "Missing or invalid data",
             "target": "Missing or invalid target",
             "rm_code": "Missing or invalid rm_code",
+            "feature_duration_start": "Missing or invalid feature_duration_start",
+            "feature_duration_end": "Missing or invalid feature_duration_end",
         }
 
         for field, error_message in required_fields.items():
@@ -23,6 +31,7 @@ def lambda_handler(event, context):
                     "body": json.dumps({"input error": error_message})
                 }
 
+        # Handle price data
         price_json = data.get("price")
         cleaned_price_str = json.loads(price_json)
 
@@ -31,16 +40,58 @@ def lambda_handler(event, context):
         if "Unnamed: 0" in price_df.columns:
             price_df.drop(["Unnamed: 0"], axis=1, inplace=True)
 
-        price_df["Time"] = pd.to_datetime(price_df["Time"])
+        price_df["Time"] = pd.to_datetime(price_df["Time"], format="ISO8601")
         price_df = price_df.astype({"PRICE (EUR/kg)": "float64",
                                     "Year": "int32",
                                     "Month": "int32"})
-        # Return success response
-        print(price_df.info())
-        return {
-            "statusCode": 200,
-            # "body": json.dumps({"message": str()}),
+
+        imputed_df, missing = impute_pred_price_evo_csv(price_df)
+        dummy_df = get_dummies_and_average_price(imputed_df, target, *rm_code)
+
+        # Prepare payload for Lambda Feature Engineer
+        feature_engineer_payload = {
+            "dummy_df": dummy_df.to_json(orient="records", date_format="iso"),
+            "missing": missing.to_json(orient="records", date_format="iso"),
+            "data": data,
+            "rm_code": rm_code,
+            "feature_duration_start": feature_duration_start,
+            "feature_duration_end": feature_duration_end,
         }
+
+        # # Save the payload to a file for testing
+        # s3_client = boto3.client("s3")
+        # s3_bucket_name = "raw-material-price-prediction-output"
+        # s3_key = "test/transform_output.json"
+        #
+        # # Save the payload to /tmp
+        # with open("/tmp/transform_output.json", "w") as f:
+        #     json.dump(feature_engineer_payload, f, indent=4)
+        #
+        # # Upload the file to S3
+        # s3_client.upload_file("/tmp/transform_output.json", s3_bucket_name, s3_key)
+        # print(f"File uploaded to s3://{s3_bucket_name}/{s3_key}")
+
+        # Invoke Lambda Feature Engineer
+        response = lambda_client.invoke(
+            FunctionName="feature_engineer",
+            InvocationType="RequestResponse",
+            Payload=json.dumps(feature_engineer_payload),
+        )
+
+        # Parse response from Lambda Feature Engineer
+        response_payload = json.load(response["Payload"])
+
+        if response_payload.get("statusCode") == 200:
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"message": "Transformation and feature engineering completed"}),
+            }
+        else:
+            error_message = response_payload.get("body")
+            return {
+                "statusCode": 500,
+                "body": json.dumps({"error": f"Feature Engineer error: {error_message}"}),
+            }
 
     except Exception as e:
         # Handle errors
