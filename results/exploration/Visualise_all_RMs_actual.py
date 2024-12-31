@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-from src import extract_and_clean as ec
-from src import transform as ts
+from src import (extract_and_clean as ec,
+                 transform as ts,
+                 format_handle)
 
 sns.set_style("whitegrid")
 
@@ -32,7 +33,7 @@ def draw_actual_combined_graphs(df, target_dict):
         plt.show()
 
 
-def draw_actual_individual_graphs(df, target_dict):
+def draw_actual_individual_graphs(df):
     """
     Visualise actual monthly mean prices of all RM_codes, individually
     """
@@ -58,9 +59,11 @@ def draw_actual_individual_graphs(df, target_dict):
         plt.show()
 
 
-df = ec.clean_pred_price_evo_csv(
+df_json = ec.clean_pred_price_evo_csv(
     '/Users/barryhuang/Projects/Raw_Material_Price_Prediction/data/raw/Dataset_Future_Predicting_Price_Evolutions_202403.csv',
     2014, 2023)
+
+df = format_handle.json_to_dataframe(df_json, 'Time')
 
 df = df[df.Year.between(2016, 2023, inclusive="both")]
 

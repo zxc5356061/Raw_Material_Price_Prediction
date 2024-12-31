@@ -1,0 +1,30 @@
+{
+  "external_driver_duration": {
+    "start_year": "2014",
+    "end_year": "2023"
+  },
+  "external_driver": [
+    "PNGASEUUSDM",
+    "PWHEAMTUSDM",
+    "WPU0652013A",
+    "electricity"
+  ],
+  "material_price_duration": {
+    "start_year": "2014",
+    "end_year": "2023"
+  },
+  "feature_duration": {
+    "start_month": "1",
+    "end_month": "12"
+  },
+  "material_price_file": "Dataset_Predicting_Price_Evolutions_202310.csv",
+  "electricity_file": "ELECTRICITY_03_2024.csv",
+  "target": "acid",
+  "rm_code": [
+    "RM01/0001",
+    "RM01/0004",
+    "RM01/0006",
+    "RM01/0007"
+  ],
+  "bucket_name": "materialpricepredictionraw28nov2024"
+}
