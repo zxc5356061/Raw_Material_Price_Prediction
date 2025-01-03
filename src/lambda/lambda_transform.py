@@ -210,7 +210,7 @@ def get_dummies_and_average_price(raw_df: pd.DataFrame, target: str, *args: str)
     filtered_df_dummies.set_index('Time_index', inplace=True)
     # Group by 'RM02/0002' and resample to monthly frequency while keeping the last value
     filtered_df_dummies = filtered_df_dummies.groupby(mask) \
-        .resample('M') \
+        .resample('ME') \
         .last() \
         .drop(mask, axis=1) \
         .reset_index() \

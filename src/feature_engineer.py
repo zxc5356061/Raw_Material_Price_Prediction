@@ -95,7 +95,7 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
     for key, df in {k: v for i, (k, v) in enumerate(kwargs.items()) if i != 0}.items():
         feature_df = pd.merge(feature_df, df, how='left', on=(['Year', 'Month', 'Time']))
 
-    # Add time label on feature df  
+    # Add time label on feature df
     feature_df['Time_label'] = feature_df['Time'].dt.strftime('%Y-%m')
     feature_df = feature_df.drop(['Year', 'Month', 'Time'], axis=1)  # to prevent duplicate columns when merging
 
@@ -133,8 +133,8 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
 
     # step 2_1
     for i in range(start, end + 1):
-        df_1 = df_1.merge(feature_df, how='left', \
-                          left_on=[f'Time_label{i}'], \
+        df_1 = df_1.merge(feature_df, how='left',
+                          left_on=[f'Time_label{i}'],
                           right_on=['Time_label'])
         [df_1.rename(columns={key: f'{key}_{i}'}, inplace=True) for key, value in kwargs.items()]
         # step2_2
@@ -142,8 +142,8 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
 
     # step 3_1   
     for i in range(start, end + 1):
-        df_2 = df_2.merge(ar_df, how='left', \
-                          left_on=[f'Time_label{i}', *RM_dummy], \
+        df_2 = df_2.merge(ar_df, how='left',
+                          left_on=[f'Time_label{i}', *RM_dummy],
                           right_on=["Time_label", *RM_dummy])
         df_2.rename(columns={"AR": f"AR_{i}"}, inplace=True)
         # step3_2
