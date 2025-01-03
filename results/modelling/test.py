@@ -42,3 +42,5 @@ dummy_df = ts.get_dummies_and_average_price(imputed_df,target,*RM_codes)
 
 # Feature engineering
 feature_df = fe.generate_features(1,12,dummy_df,missing,*RM_codes, **external_drivers)
+
+feature_df.to_csv("local_test.csv", index=False)

@@ -1,9 +1,88 @@
+import json
+
 import numpy as np
 import pandas as pd
 
+import boto3
 
 def lambda_handler(event, context):
-    pass
+    try:
+        # Parse inputs from event
+        dummy_str = event.get("dummy_df", None)
+        missing_str = event.get("missing", None)
+        data = event.get("data", None)
+        rm_code = event.get("rm_code", None)
+        feature_duration_start = event.get("feature_duration_start", None)
+        feature_duration_end = event.get("feature_duration_end", None)
+
+        # Validate inputs
+        required_fields = {
+            "dummy_df": "Missing or invalid dummy_df",
+            "missing": "Missing or invalid missing_df",
+            "data": "Missing or invalid data",
+            "rm_code": "Missing or invalid rm_code",
+            "feature_duration_start": "Missing or invalid feature_duration_start",
+            "feature_duration_end": "Missing or invalid feature_duration_end",
+        }
+
+        for field, error_message in required_fields.items():
+            if event.get(field) is None:
+                return {
+                    "statusCode": 400,
+                    "body": json.dumps({"input error": error_message})
+                }
+
+        # Handle dummy_df and missing_df
+        dummy_json = json.loads(dummy_str)
+        dummy_df = pd.DataFrame(data=dummy_json)
+        dummy_df["Time"] = pd.to_datetime(dummy_df["Time"], format="ISO8601")
+
+        missing_json = json.loads(missing_str)
+        missing_df = pd.DataFrame(data=missing_json)
+
+        # Get external price drivers
+        external_drivers = {}
+        for key in data.keys():
+            if key != "price":
+                current_df = pd.DataFrame(json.loads(data[key]))
+                current_df["Time"] = pd.to_datetime(current_df["Time"], format="ISO8601")
+                if "Unnamed: 0" in current_df.columns:
+                    current_df.drop(["Unnamed: 0"], axis=1, inplace=True)
+
+                external_drivers[f"{key}"] = current_df
+
+
+        # Feature engineering
+        feature_df = generate_features(feature_duration_start, feature_duration_end, dummy_df, missing_df, *rm_code,
+                                       **external_drivers)
+
+        # Save the payload to a file for testing
+        s3_client = boto3.client("s3")
+        s3_bucket_name = "raw-material-price-prediction-output"
+        s3_key = "test/feature_engineer_output.csv"
+
+        # Save the DataFrame as CSV to /tmp
+        local_file_path = "/tmp/feature_engineer_output.csv"
+        feature_df.to_csv(local_file_path, index=False)  # Save CSV without row indices
+
+        # Upload the file to S3
+        try:
+            s3_client.upload_file(local_file_path, s3_bucket_name, s3_key)
+            print(f"File successfully uploaded to s3://{s3_bucket_name}/{s3_key}")
+        except Exception as e:
+            print(f"Failed to upload file to S3: {str(e)}")
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps({"message": "Feature engineering completed"}),
+        }
+
+    except Exception as e:
+        # Handle errors
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)})
+        }
 
 
 def exclude_imputed_data_from_y(y_df: pd.DataFrame, missing: pd.DataFrame, RM_codes: list) -> pd.DataFrame:
@@ -89,7 +168,7 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
 
     ## To create time-labelled feature lists of external price drivers
     first_key = next(iter(kwargs))
-    feature_df = kwargs[first_key]  # to caputer the first given df for following merging
+    feature_df = kwargs[first_key]  # to capture the first given df for following merging
 
     # enumerate(kwargs.items()): This part of the expression iterates over the items of the kwargs dictionary using the items() method, yielding pairs of (index, (key, value)) tuples where index is the index of the item in the enumeration, and (key, value) is the key-value pair from the dictionary.
     for key, df in {k: v for i, (k, v) in enumerate(kwargs.items()) if i != 0}.items():
@@ -101,10 +180,10 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
 
     ## To create autoregression parts
     # to filter RM codes with dummies only
-    RM_dummy = [arg for arg in args if arg in y_df.columns]
+    rm_dummy = [arg for arg in args if arg in y_df.columns]
 
     ar_df = pd.DataFrame()
-    ar_df = y_df[["Time", "Average_price", *RM_dummy]]
+    ar_df = y_df[["Time", "Average_price", *rm_dummy]]
     ar_df.rename(columns={"Average_price": "AR"}, inplace=True)
     ar_df['Time_label'] = ar_df['Time'].dt.strftime('%Y-%m')
     ar_df = ar_df.drop(["Time"], axis=1)  # to prevent duplicate columns when merging
@@ -129,7 +208,7 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
     df_1['Time'] = y_df['Time']  # add current time as merging keys
     df_2 = pd.concat(label_dfs, axis=1)  # transform labels into a df
     df_2['Time'] = y_df['Time']  # add current time as merging keys
-    df_2[[*RM_dummy]] = ar_df[[*RM_dummy]]  # add dummy variables as merging keys
+    df_2[[*rm_dummy]] = ar_df[[*rm_dummy]]  # add dummy variables as merging keys
 
     # step 2_1
     for i in range(start, end + 1):
@@ -139,19 +218,19 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
         [df_1.rename(columns={key: f'{key}_{i}'}, inplace=True) for key, value in kwargs.items()]
         # step2_2
         df_1 = df_1.drop(['Time_label', f'Time_label{i}'], axis=1)
-    print(df_1.info())
+
     # step 3_1
     for i in range(start, end + 1):
         df_2 = df_2.merge(ar_df, how='left',
-                          left_on=[f'Time_label{i}', *RM_dummy],
-                          right_on=["Time_label", *RM_dummy])
+                          left_on=[f'Time_label{i}', *rm_dummy],
+                          right_on=["Time_label", *rm_dummy])
         df_2.rename(columns={"AR": f"AR_{i}"}, inplace=True)
         # step3_2
         df_2 = df_2.drop(['Time_label', f'Time_label{i}'], axis=1)
 
     # step 4
     y_df = pd.merge(y_df, df_1, how='left', on=['Time'])
-    y_df = pd.merge(y_df, df_2, how='left', on=["Time", *RM_dummy])
+    y_df = pd.merge(y_df, df_2, how='left', on=["Time", *rm_dummy])
     non_na_df = y_df.dropna(axis=0, how='any').drop_duplicates(subset=None)
 
     ## To exclude records without real purchasing
@@ -175,7 +254,6 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
                        f'{key}_{i}'] == np.float64, f"The data type of column {key}_{i} is not np.float64."
 
     assert y_df_non_na.shape[0] <= y_df.shape[0], "Returned df has more rows than inputted y_df."
-
     return y_df_non_na
 
 
