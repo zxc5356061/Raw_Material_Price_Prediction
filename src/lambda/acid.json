@@ -1,7 +1,7 @@
 {
   "external_driver_duration": {
     "start_year": "2014",
-    "end_year": "2018"
+    "end_year": "2024"
   },
   "external_driver": [
     "PNGASEUUSDM",
@@ -11,11 +11,11 @@
   ],
   "material_price_duration": {
     "start_year": "2014",
-    "end_year": "2017"
+    "end_year": "2023"
   },
   "feature_duration": {
     "start_month": "1",
-    "end_month": "3"
+    "end_month": "12"
   },
   "material_price_file": "Dataset_Predicting_Price_Evolutions_202310.csv",
   "electricity_file": "ELECTRICITY_03_2024.csv",
