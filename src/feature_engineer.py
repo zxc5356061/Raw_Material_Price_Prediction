@@ -139,8 +139,8 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
         [df_1.rename(columns={key: f'{key}_{i}'}, inplace=True) for key, value in kwargs.items()]
         # step2_2
         df_1 = df_1.drop(['Time_label', f'Time_label{i}'], axis=1)
-
-    # step 3_1   
+    print(df_1.info())
+    # step 3_1
     for i in range(start, end + 1):
         df_2 = df_2.merge(ar_df, how='left',
                           left_on=[f'Time_label{i}', *RM_dummy],
@@ -149,7 +149,7 @@ def generate_features(start: int, end: int, y_df: pd.DataFrame, impute_list: pd.
         # step3_2
         df_2 = df_2.drop(['Time_label', f'Time_label{i}'], axis=1)
 
-    # step 4    
+    # step 4
     y_df = pd.merge(y_df, df_1, how='left', on=['Time'])
     y_df = pd.merge(y_df, df_2, how='left', on=["Time", *RM_dummy])
     non_na_df = y_df.dropna(axis=0, how='any').drop_duplicates(subset=None)

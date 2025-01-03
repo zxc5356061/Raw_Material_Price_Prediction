@@ -8,20 +8,20 @@ from src import (extract_and_clean as ec,
 
 
 # import data
-gad_dict = ec.get_fred_data('PNGASEUUSDM', 2014, 2024)
+gad_dict = ec.get_fred_data('PNGASEUUSDM', 2014, 2018)
 gas_df = format_handle.json_to_dataframe(gad_dict,'Time')
 
-wheat_dict = ec.get_fred_data('PWHEAMTUSDM', 2014, 2024)
+wheat_dict = ec.get_fred_data('PWHEAMTUSDM', 2014, 2018)
 wheat_df = format_handle.json_to_dataframe(wheat_dict,'Time')
 
-ammonia_dict = ec.get_fred_data('WPU0652013A', 2014, 2024)
+ammonia_dict = ec.get_fred_data('WPU0652013A', 2014, 2018)
 ammonia_df = format_handle.json_to_dataframe(ammonia_dict,'Time')
 
 
-elec_dict = ec.clean_elec_csv('/Users/barryhuang/Projects/Raw_Material_Price_Prediction/data/raw/ELECTRICITY_03_2024.csv',2014,2024)
+elec_dict = ec.clean_elec_csv('/Users/barryhuang/Projects/Raw_Material_Price_Prediction/data/raw/ELECTRICITY_03_2024.csv',2014,2018)
 elec_df = format_handle.json_to_dataframe(elec_dict,'Time')
 
-df_dict = ec.clean_pred_price_evo_csv("/Users/barryhuang/Projects/Raw_Material_Price_Prediction/data/raw/Dataset_Future_Predicting_Price_Evolutions_202403.csv",2014,2023)
+df_dict = ec.clean_pred_price_evo_csv("/Users/barryhuang/Projects/Raw_Material_Price_Prediction/data/raw/Dataset_Future_Predicting_Price_Evolutions_202403.csv",2014,2017)
 df = format_handle.json_to_dataframe(df_dict,'Time')
 
 # other variables
@@ -43,4 +43,4 @@ dummy_df = ts.get_dummies_and_average_price(imputed_df,target,*RM_codes)
 # Feature engineering
 feature_df = fe.generate_features(1,3,dummy_df,missing,*RM_codes, **external_drivers)
 
-# print(feature_df.info())
+print(feature_df.info())

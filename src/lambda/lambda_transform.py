@@ -66,7 +66,7 @@ def lambda_handler(event, context):
         # # Save the payload to /tmp
         # with open("/tmp/transform_output.json", "w") as f:
         #     json.dump(feature_engineer_payload, f, indent=4)
-        #
+
         # # Upload the file to S3
         # s3_client.upload_file("/tmp/transform_output.json", s3_bucket_name, s3_key)
         # print(f"File uploaded to s3://{s3_bucket_name}/{s3_key}")

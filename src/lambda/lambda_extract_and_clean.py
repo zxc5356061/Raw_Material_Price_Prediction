@@ -47,7 +47,7 @@ def lambda_handler(event, context):
         data = {}
 
         for driver in external_drivers:
-            if driver == "electricity":
+            if driver == "Electricity":
                 elec_raw = read_csv_from_s3(bucket_name, electricity_file)
                 elec_df = clean_elec_csv(elec_raw, external_driver_start, external_driver_end)
                 elec_json = elec_df.to_json(orient="records", date_format="iso", index=False)
