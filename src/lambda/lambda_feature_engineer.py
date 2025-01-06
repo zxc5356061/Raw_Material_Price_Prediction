@@ -5,9 +5,11 @@ import pandas as pd
 
 import boto3
 
+
 def lambda_handler(event, context):
     try:
         # Parse inputs from event
+        target = event.get("target", None)
         dummy_str = event.get("dummy_df", None)
         missing_str = event.get("missing", None)
         data = event.get("data", None)
@@ -17,6 +19,7 @@ def lambda_handler(event, context):
 
         # Validate inputs
         required_fields = {
+            "target": "Missing or invalid target",
             "dummy_df": "Missing or invalid dummy_df",
             "missing": "Missing or invalid missing_df",
             "data": "Missing or invalid data",
@@ -62,7 +65,7 @@ def lambda_handler(event, context):
         s3_key = "test/feature_engineer_output.csv"
 
         # Save the DataFrame as CSV to /tmp
-        local_file_path = "/tmp/feature_engineer_output.csv"
+        local_file_path = f"/tmp/{target}_output.csv"
         feature_df.to_csv(local_file_path, index=False)  # Save CSV without row indices
 
         # Upload the file to S3

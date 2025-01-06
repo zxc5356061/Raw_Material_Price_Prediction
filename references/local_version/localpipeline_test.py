@@ -1,9 +1,9 @@
-import numpy as np
-from src import (extract_and_clean as ec,
+
+from references.local_version import (extract_and_clean as ec,
                  transform as ts,
-                 feature_engineer as fe,
-                 forecastor as fc,
-                 format_handle)
+                 feature_engineer as fe)
+
+from src import format_handle
 
 
 
@@ -43,4 +43,4 @@ dummy_df = ts.get_dummies_and_average_price(imputed_df,target,*RM_codes)
 # Feature engineering
 feature_df = fe.generate_features(1,12,dummy_df,missing,*RM_codes, **external_drivers)
 
-feature_df.to_csv("local_test.csv", index=False)
+# feature_df.to_csv("local_test_result.csv", index=False)

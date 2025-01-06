@@ -1,50 +1,11 @@
-import json
 from datetime import datetime
 
 import pandas as pd
 from fredapi import Fred
 
-from src import format_handle
-
 
 def lambda_handler(event, context):
-    """
-    not test yet
-    :param event:
-    :param context:
-    :return: dict file with dataframe as json string under 'body' key
-    """
-    try:
-        # Inputs from event
-        target = event['target']
-        target_type = event['target_type']
-        start_year = event['start_year']
-        end_year = event['end_year']
-        file_path = event['file_path']
-
-        # Extract data
-        if target_type == 'Fred':
-            data_dict = get_fred_data(target, start_year, end_year)
-            data_df = format_handle.json_to_dataframe(data_dict, 'Time')
-        elif target_type == 'electricity':
-            data_dict = clean_elec_csv(file_path, start_year, end_year)
-            data_df = format_handle.json_to_dataframe(data_dict, 'Time')
-        elif target_type == 'pred_price_evo':
-            df_dict = clean_pred_price_evo_csv(file_path, start_year, end_year)
-            data_df = format_handle.json_to_dataframe(df_dict, 'Time')
-        else:
-            raise Exception("Please check given target type")
-
-        # Output
-        return {
-            "statusCode": 200,
-            "body": data_df.to_json(orient="records", date_format="iso")
-        }
-    except Exception as e:
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": str(e)})
-        }
+    pass
 
 
 def get_fred_data(target: str,
