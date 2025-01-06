@@ -1,8 +1,4 @@
-# Predicting Price Evolutions of the Purchases of Raw Materials - WIP (Python 3.10.12)
-
-## Refactoring - WIP
-
-I'm currently working on refactoring the pipelines using AWS S3, Lambda, and Cloudformation.
+# Predicting Price Evolutions of the Purchases of Raw Materials (Python 3.10.12)
 
 ## Description - WIP
 
@@ -24,52 +20,47 @@ prices.
 The project contains several major sections.
 
 - `data`
-  - The `raw/` contains raw data.
-  - The `generated_features/` contains processed features for all materials for references.
-  - The `coefficient_export/` contains exported feature coefficients of Lasso regression models for references.
+  - The `raw/` contains target variable data and electricity data.
 - `results`
+  - The `coefficient_export/` contains exported feature coefficients of final Lasso regression models to help identify whether a specific price driver has critical impact on target variable or not.
   - The `exploration/` contains the visualisation of historical rm codes prices.
+  - The `generated_features/` contains the outputs of ETL pipelines for further modelling.
   - The `modelling/` contains trained models.
+- `src/lambda`
+  - The `testing` folder contains mock data for unit testing.
+  - The `lambda_extract_and_clean` contains functions to extract data from API and S3 bucket.
+  - The `lambda_transform` contains functions for necessary data transformation.
+  - The `lambda_feature_engineer` contains functions to perform feature engineering for further modelling.
 - `src`
   - The `forecastor` contains functions to train models.
-  - The `naiveforecastor` - TBC
-  - The `preprocessor` contains functions to import, clean, transform, and engineer features.
-  - The `visualiser` contains visualisations and trained models.
+  - The `naiveforecastor` contains functions to calculate naive forecasting as baseline models.
+  - The `visualiser` contains functions to draw graphs.
 
-## Project layout - WIP
+## Project layout
 
 ```text
 Raw_Material_Price_Prediction/
     ├── data/
         ├── raw/
-            ├── Dataset_Future_Predicting_Price_Evolutions_202403.csv
-            ├── Dataset_Predicting_Price_Evolutions_202310.csv
-            └── ELECTRICITY_03_2024.csv
-        ├── generated_features/
-            ├── acid_feature.csv
-            ├── alkalis_feature.csv
-            ├── anionic surfactant_feature.csv
-            ├── bleaching agent_feature.csv
-            ├── builder_feature.csv
-            ├── fatty acid_feature.csv
-            ├── non-ionic surfactant_feature.csv
-            └── solvent_feature.csv
-        └── coefficient_export
-            └── alkalis_all_features_coef_.csv
-    ├── notebook/
+        └── generated_feature/
+    ├── results/
+        ├── coefficient_export/
         ├── exploration/
-            └── Visualise_all_RMs_actual.ipynb
         └── modelling/
-            ├── Acid.ipynb
-            └── Non-ionic surfactant.ipynb
     ├── src/
+        ├── lambda/
+            ├── testing/
+            ├── lambda_extract_and_clean.py
+            ├── lambda_feature_engineer.py
+            └── lambda_transform.py
+        ├── __init__.py
         ├── forecastor.py
+        ├── format_handle.py
         ├── naiveforecastor.py
-        ├── preprocessor.py  
+        ├── print_all_rm_codes.py
         └── visualiser.py
-    ├── .gitignore
-    └── README.md
-
+    ├── README.md
+    └── requirements.txt
 ```
 
 ## Approaches - WIP
@@ -103,7 +94,7 @@ Raw_Material_Price_Prediction/
 [] Visualisation - individual Key RM codes
 [] Compare Lasso with Naive forecast
 
-### Onto AWS
+### Onto AWS Cloud
 [] Split preprocessor into extract_and_clean, transform, and feature_engineer
 [] Add def lambda_handler()
     [] Modify def input/output as json formats 
