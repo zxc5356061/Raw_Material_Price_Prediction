@@ -7,6 +7,9 @@ lambda_client = boto3.client("lambda")
 
 
 def lambda_handler(event, context):
+    """
+    lambda_transform implements data imputation, calculate average prices, creates dummy variables for external price drivers, and passes transformed data to lambda_feature_engineer.
+    """
     try:
         # Parse inputs from event
         data = event.get("data", None)

@@ -7,6 +7,9 @@ import boto3
 
 
 def lambda_handler(event, context):
+    """
+    lambda_feature_engineer implements feature engineering and exports features in csv format onto S3 bucket.
+    """
     try:
         # Parse inputs from event
         target = event.get("target", None)

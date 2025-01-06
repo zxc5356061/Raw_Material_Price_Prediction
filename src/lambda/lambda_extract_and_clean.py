@@ -20,6 +20,9 @@ def read_csv_from_s3(bucket, key):
 
 
 def lambda_handler(event, context):
+    """
+    lambda_extract_and_clean extracts data from FRED API and S3 bucket, cleans data, and passes cleaned data to lambda_transform.
+    """
     try:
         # Inputs from event
         external_driver_start = int(event["external_driver_duration"]["start_year"])
