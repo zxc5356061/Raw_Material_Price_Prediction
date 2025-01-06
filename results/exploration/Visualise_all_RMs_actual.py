@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-from src import (extract_and_clean as ec,
-                 transform as ts,
-                 format_handle)
+from references.local_version import (extract_and_clean as ec,
+                 transform as ts)
+
+from src import format_handle
 
 sns.set_style("whitegrid")
 
