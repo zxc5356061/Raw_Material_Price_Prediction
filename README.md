@@ -42,9 +42,10 @@ The project contains several major sections.
 Raw_Material_Price_Prediction/
     ├── data/
         ├── raw/
-        └── generated_feature/
+        
     ├── results/
         ├── coefficient_export/
+        ├── generated_feature/
         ├── exploration/
         └── modelling/
     ├── src/
