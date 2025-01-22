@@ -8,7 +8,7 @@ target = 'non-ionic surfactant'.lower()
 rm_codes = ['RM12/0002', 'RM12/0003', 'RM12/0005', 'RM12/0008', 'RM12/0012']
 
 feature_df = pd.read_csv(
-    "~/Projects/Raw_Material_Price_Prediction/results/generated_feature/non-ionic surfactant_feature.csv")
+    "~/Documents/Barry/sideproject/Raw_Material_Price_Prediction/results/generated_feature/non-ionic surfactant_feature.csv")
 
 test_periods = [
     ('2019-01-01', '2019-07-01'),
@@ -44,8 +44,14 @@ for code in rm_codes:
     for lag in lags:
         mape_values = list()
         for period in test_periods:
-            result = fc.train_model_AR(feature_df, code, lag, period, alpha_bottom)
+            result, coef = fc.train_model_AR(raw_df=feature_df,
+                                       code=code,
+                                       lag=lag,
+                                       test_periods=period,
+                                       alpha_bottom=alpha_bottom,
+                                       return_coef=True)
             mape_values.append(result)
+            print(coef)
 
         assert len(mape_values) == len(test_periods), "len(mape_values)!=len(test_periods)"
         average_mape = np.mean(mape_values)
@@ -56,8 +62,14 @@ for code in rm_codes:
     for lag in lags:
         mape_values = list()
         for period in test_periods:
-            result = fc.train_model_all_features(feature_df, code, lag, period, alpha_bottom)
+            result, coef = fc.train_model_all_features(raw_df=feature_df,
+                                                           code=code,
+                                                           lag=lag,
+                                                           test_periods=period,
+                                                           alpha_bottom=alpha_bottom,
+                                                           return_coef=True)
             mape_values.append(result)
+            print(coef)
 
         assert len(mape_values) == len(test_periods), "len(mape_values)!=len(test_periods)"
         average_mape = np.mean(mape_values)

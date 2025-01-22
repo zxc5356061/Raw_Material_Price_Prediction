@@ -5,17 +5,13 @@
 Accurate and effective raw material price prediction is critical for manufacturing enterprises to optimize the timing of
 raw material purchases. Company A is an international manufacturer of hygiene products, and has traditionally relied on
 local experts from production sites to provide price forecasts, which can be time-consuming and susceptible to bias and
-subjectivity. To address these challenges, this project aims to employ data-driven modelling techniques to provide
-accurate and efficient predictions for the unit price of raw materials at Company A.
+subjectivity. To address these challenges, this project aims to employ data-driven modelling techniques to identify price drivers that have critical impact on raw material prices.
 
 LASSO regression models that incorporates both univariate information (historical prices of raw materials) and exogenous
 variables (price indices of identified price drivers) are constructed for different raw materials across various
 forecasting horizons. These models are compared against baseline persistence forecast and LASSO regression models using
 only univariate information to assess whether this modelling approach can improve the accuracy of raw material price
 prediction and whether the inclusion of exogenous variables enhances prediction accuracy.
-
-Additionally, a feature important analysis is conducted to investigate the most predictive features for raw material
-prices.
 
 The project contains several major sections.
 
