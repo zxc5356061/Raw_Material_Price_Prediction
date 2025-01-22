@@ -1,6 +1,6 @@
 # Predicting Price Evolutions of the Purchases of Raw Materials (Python 3.10.12)
 
-[![first-timers-only Friendly](https://img.shields.io/badge/first--timers--only-friendly-blue.svg)](http://www.firsttimersonly.com/)
+[![Python 3.10.12](https://img.shields.io/badge/first--timers--only-friendly-blue.svg)](https://www.python.org/downloads/release/python-31012/)
 
 ## Description
 
