@@ -1,17 +1,14 @@
 # Predicting Price Evolutions of the Purchases of Raw Materials (Python 3.10.12)
 
+[![first-timers-only Friendly](https://img.shields.io/badge/first--timers--only-friendly-blue.svg)](http://www.firsttimersonly.com/)
+
 ## Description
 
-Accurate and effective raw material price prediction is critical for manufacturing enterprises to optimize the timing of
-raw material purchases. Company A is an international manufacturer of hygiene products, and has traditionally relied on
-local experts from production sites to provide price forecasts, which can be time-consuming and susceptible to bias and
-subjectivity. To address these challenges, this project aims to employ data-driven modelling techniques to identify price drivers that have critical impact on raw material prices.
+Accurate and effective raw material price prediction is essential for manufacturing enterprises to optimise the timing of raw material purchases. Company A, an international manufacturer of hygiene products, has traditionally relied on local experts from production sites to provide price forecasts. However, this approach can be time-consuming and prone to bias and subjectivity. To address these challenges, this project leverages data-driven modelling techniques to identify key price drivers that critically impact raw material prices.
 
-LASSO regression models that incorporates both univariate information (historical prices of raw materials) and exogenous
-variables (price indices of identified price drivers) are constructed for different raw materials across various
-forecasting horizons. These models are compared against baseline persistence forecast and LASSO regression models using
-only univariate information to assess whether this modelling approach can improve the accuracy of raw material price
-prediction and whether the inclusion of exogenous variables enhances prediction accuracy.
+LASSO regression models, incorporating both univariate information (historical prices of raw materials) and exogenous variables (price indices of identified price drivers), are developed for various raw materials across different forecasting horizons. These models are benchmarked against baseline persistence forecasts and LASSO regression models that utilise only univariate information. This comparison aims to evaluate whether the proposed modelling approach improves the accuracy of raw material price predictions and whether the inclusion of exogenous variables enhances prediction performance.
+
+The data pipeline and feature engineering processes are deployed on the AWS Cloud, utilising S3, Lambda, and CloudFormation.
 
 The project contains several major sections.
 
